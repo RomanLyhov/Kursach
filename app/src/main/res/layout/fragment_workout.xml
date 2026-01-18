@@ -1,203 +1,50 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:layout_marginBottom="16dp"
-    android:padding="12dp"
-    android:background="@drawable/card_background">
+    android:padding="16dp"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#FFFFFF">
 
-    <LinearLayout
+    <!-- Заголовок -->
+    <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_marginBottom="12dp">
+        android:text="Мои тренировки"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:textColor="#000000"
+        android:gravity="center"
+        android:layout_marginBottom="16dp"/>
 
-        <TextView
-            android:id="@+id/exerciseNumberTextView"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Упражнение 1"
-            android:textSize="16sp"
-            android:textColor="#000000"
-            android:textStyle="bold" />
-    </LinearLayout>
-
-    <LinearLayout
+    <!-- Кнопка добавить тренировку -->
+    <TextView
+        android:id="@+id/createWorkoutButton"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:layout_marginBottom="12dp">
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Название упражнения"
-            android:textSize="14sp"
-            android:textColor="#666666"
-            android:layout_marginBottom="4dp" />
-
-        <EditText
-            android:id="@+id/exerciseNameEditText"
-            android:layout_width="match_parent"
-            android:layout_height="40dp"
-            android:hint="Например: Жим лежа"
-            android:background="@drawable/edit_text_background"
-            android:paddingStart="8dp"
-            android:paddingEnd="8dp"
-            android:textColor="#000000"
-            android:textColorHint="#888888" />
-
-    </LinearLayout>
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_marginBottom="12dp">
-
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical"
-            android:layout_marginEnd="8dp">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Подходы"
-                android:textSize="14sp"
-                android:textColor="#666666"
-                android:layout_marginBottom="4dp" />
-
-            <EditText
-                android:id="@+id/setsEditText"
-                android:layout_width="match_parent"
-                android:layout_height="40dp"
-                android:hint="3"
-                android:inputType="number"
-                android:background="@drawable/edit_text_background"
-                android:paddingStart="8dp"
-                android:paddingEnd="8dp"
-                android:textColor="#000000"
-                android:textColorHint="#888888" />
-
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical"
-            android:layout_marginStart="8dp">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Повторения"
-                android:textSize="14sp"
-                android:textColor="#666666"
-                android:layout_marginBottom="4dp" />
-
-            <EditText
-                android:id="@+id/repsEditText"
-                android:layout_width="match_parent"
-                android:layout_height="40dp"
-                android:hint="10"
-                android:inputType="number"
-                android:background="@drawable/edit_text_background"
-                android:paddingStart="8dp"
-                android:paddingEnd="8dp"
-                android:textColor="#000000"
-                android:textColorHint="#888888" />
-
-        </LinearLayout>
-
-    </LinearLayout>
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:layout_marginBottom="12dp">
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Вес (кг, опционально)"
-            android:textSize="14sp"
-            android:textColor="#666666"
-            android:layout_marginBottom="4dp" />
-
-        <EditText
-            android:id="@+id/weightEditText"
-            android:layout_width="match_parent"
-            android:layout_height="40dp"
-            android:hint="20"
-            android:inputType="numberDecimal"
-            android:background="@drawable/edit_text_background"
-            android:paddingStart="8dp"
-            android:paddingEnd="8dp"
-            android:textColor="#000000"
-            android:textColorHint="#888888" />
-
-    </LinearLayout>
-
-    <Button
-        android:id="@+id/startExerciseButton"
-        android:layout_width="match_parent"
-        android:layout_height="40dp"
-        android:text="Начать выполнение"
-        android:backgroundTint="#FF9800"
+        android:layout_height="48dp"
+        android:text="Добавить тренировку"
+        android:gravity="center"
         android:textColor="#FFFFFF"
-        android:visibility="gone" />
-
-    <LinearLayout
-        android:id="@+id/progressContainer"
-        android:layout_width="match_parent"
+        android:background="#2196F3"
+        android:textSize="16sp"
+        android:layout_marginBottom="16dp"/>
+    <Button
+        android:id="@+id/btnRefresh"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:visibility="gone"
-        android:padding="12dp"
-        android:background="@drawable/progress_background"
-        android:layout_marginTop="8dp">
+        android:text="Обновить"
+        android:layout_marginBottom="16dp"/>
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Прогресс выполнения"
-            android:textSize="16sp"
-            android:textColor="#000000"
-            android:textStyle="bold"
-            android:layout_marginBottom="12dp" />
+    <!-- ScrollView для списка тренировок -->
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
 
         <LinearLayout
-            android:id="@+id/setsProgressContainer"
+            android:id="@+id/containerWorkouts"
+            android:orientation="vertical"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical" />
-
-        <Button
-            android:id="@+id/completeSetButton"
-            android:layout_width="match_parent"
-            android:layout_height="40dp"
-            android:text="Завершить подход"
-            android:backgroundTint="#4CAF50"
-            android:textColor="#FFFFFF"
-            android:layout_marginTop="12dp"
-            android:visibility="gone" />
-
-        <Button
-            android:id="@+id/finishExerciseButton"
-            android:layout_width="match_parent"
-            android:layout_height="40dp"
-            android:text="Завершить упражнение"
-            android:backgroundTint="#2196F3"
-            android:textColor="#FFFFFF"
-            android:layout_marginTop="8dp"
-            android:visibility="gone" />
-    </LinearLayout>
-
+            android:layout_height="wrap_content"/>
+    </ScrollView>
 </LinearLayout>

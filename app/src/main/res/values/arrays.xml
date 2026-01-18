@@ -16,6 +16,15 @@
         <item>Подготовка к соревнованиям</item>
     </string-array>
 
+        <string-array name="period_array">
+            <item>Последние 7 дней</item>
+            <item>Последние 30 дней</item>
+            <item>Последние 3 месяца</item>
+            <item>Последние 6 месяцев</item>
+            <item>Последний год</item>
+            <item>За всё время</item>
+        </string-array>
+
     <string-array name="exercises">
         <!-- Грудь -->
         <item>Жим штанги лежа</item>
