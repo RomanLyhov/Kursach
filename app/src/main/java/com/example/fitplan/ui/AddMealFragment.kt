@@ -4,7 +4,10 @@ import android.content.Context
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
-import android.view.*
+import android.util.Log
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
 import android.widget.*
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
@@ -15,9 +18,11 @@ import kotlinx.coroutines.*
 
 class AddMealFragment : Fragment() {
 
+    // Переменные для хранения данных
     private lateinit var mealName: String
     private val db by lazy { App.instance.db }
 
+    // Элементы интерфейса
     private lateinit var productSearch: AutoCompleteTextView
     private lateinit var quantityEdit: EditText
     private lateinit var caloriesTv: TextView
@@ -27,16 +32,19 @@ class AddMealFragment : Fragment() {
     private lateinit var btnAdd: Button
     private lateinit var btnCancel: Button
 
+    // Данные и состояния
     private var selectedProduct: Product? = null
     private lateinit var adapter: ArrayAdapter<String>
     private var searchJob: Job? = null
     private var addMealJob: Job? = null
 
+    // Инициализация фрагмента с получением параметров
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         mealName = requireArguments().getString("mealName") ?: ""
     }
 
+    // Создание интерфейса фрагмента
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
     ): View {
@@ -60,12 +68,14 @@ class AddMealFragment : Fragment() {
         return view
     }
 
+    // Настройка всех обработчиков событий
     private fun setupListeners() {
         productSearch.addTextChangedListener(object : TextWatcher {
             override fun afterTextChanged(s: Editable?) {
                 searchJob?.cancel()
-                val query = s.toString().trim()
+                searchJob = null
 
+                val query = s.toString().trim()
 
                 if (query.isEmpty()) {
                     adapter.clear()
@@ -76,8 +86,11 @@ class AddMealFragment : Fragment() {
                 }
 
                 searchJob = viewLifecycleOwner.lifecycleScope.launch {
-                    try {
+                    delay(300)
 
+                    if (!isActive) return@launch
+
+                    try {
                         val products = withContext(Dispatchers.IO) {
                             try {
                                 db.getAllProductsMatching(query)
@@ -86,6 +99,7 @@ class AddMealFragment : Fragment() {
                             }
                         }
 
+                        if (!isActive) return@launch
                         if (!isAdded) return@launch
 
                         withContext(Dispatchers.Main) {
@@ -93,32 +107,51 @@ class AddMealFragment : Fragment() {
                             if (products.isNotEmpty()) {
                                 adapter.addAll(products.map { it.name })
                                 adapter.notifyDataSetChanged()
-                                if (productSearch.isPopupShowing) {
-                                    productSearch.dismissDropDown()
+                                if (!productSearch.isPopupShowing) {
+                                    productSearch.showDropDown()
                                 }
-                                productSearch.showDropDown()
                             } else {
                                 selectedProduct = null
                                 recalcNutrition()
                             }
                         }
                     } catch (e: CancellationException) {
+                        return@launch
+                    } catch (e: Exception) {
+                        if (isAdded) {
+                            Log.d("AddMealFragment", "Search error", e)
+                        }
                     }
                 }
             }
+
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
         })
 
         productSearch.setOnItemClickListener { _, _, position, _ ->
             val name = adapter.getItem(position) ?: return@setOnItemClickListener
+
+            searchJob?.cancel()
+            searchJob = null
+
             viewLifecycleOwner.lifecycleScope.launch {
-                val product = withContext(Dispatchers.IO) {
-                    db.getProductByName(name)
+                try {
+                    val product = withContext(Dispatchers.IO) {
+                        try {
+                            db.getProductByName(name)
+                        } catch (e: Exception) {
+                            null
+                        }
+                    }
+
+                    if (!isAdded) return@launch
+
+                    selectedProduct = product
+                    recalcNutrition()
+                } catch (e: CancellationException) {
+                    return@launch
                 }
-                if (!isAdded) return@launch
-                selectedProduct = product
-                recalcNutrition()
             }
         }
 
@@ -128,6 +161,7 @@ class AddMealFragment : Fragment() {
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
         })
 
+        // Обработчик кнопки добавления продукта
         btnAdd.setOnClickListener {
             if (addMealJob?.isActive == true) return@setOnClickListener
 
@@ -166,7 +200,7 @@ class AddMealFragment : Fragment() {
                             )
                             true
                         } catch (e: Exception) {
-                            e.printStackTrace()
+                            Log.e("AddMealFragment", "Database error", e)
                             false
                         }
                     }
@@ -181,8 +215,11 @@ class AddMealFragment : Fragment() {
                         }
                     }
                 } catch (e: CancellationException) {
+                    if (isAdded) {
+                        btnAdd.isEnabled = true
+                    }
                 } catch (e: Exception) {
-                    e.printStackTrace()
+                    Log.e("AddMealFragment", "Add meal error", e)
                     if (isAdded) {
                         Toast.makeText(requireContext(), "Ошибка: ${e.message}", Toast.LENGTH_SHORT).show()
                         btnAdd.isEnabled = true
@@ -191,13 +228,18 @@ class AddMealFragment : Fragment() {
             }
         }
 
+        // Обработчик кнопки отмены
         btnCancel.setOnClickListener {
+            searchJob?.cancel()
+            addMealJob?.cancel()
+
             if (isAdded) {
                 parentFragmentManager.popBackStack()
             }
         }
     }
 
+    // Пересчет пищевой ценности на основе выбранного продукта и количества
     private fun recalcNutrition() {
         val product = selectedProduct
         val quantity = quantityEdit.text.toString().toIntOrNull() ?: 100
@@ -209,13 +251,17 @@ class AddMealFragment : Fragment() {
         carbsTv.text = "${((product?.carbs ?: 0f) * factor).toInt()} г"
     }
 
+    // Очистка ресурсов при уничтожении вида
     override fun onDestroyView() {
         super.onDestroyView()
         searchJob?.cancel()
         addMealJob?.cancel()
+        searchJob = null
+        addMealJob = null
     }
 
     companion object {
+        // Создание нового экземпляра фрагмента с передачей параметров
         fun newInstance(mealName: String) =
             AddMealFragment().apply {
                 arguments = Bundle().apply {

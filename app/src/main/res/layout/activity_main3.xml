@@ -5,31 +5,30 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/background_primary"
     tools:context=".ui.MainActivity3">
 
-    <!-- Контейнер для фрагментов -->
     <FrameLayout
         android:id="@+id/fragment_container"
         android:layout_width="0dp"
         android:layout_height="0dp"
+        android:background="@color/background_primary"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintBottom_toTopOf="@id/bottom_navigation" />
 
-    <!-- Панель навигации -->
     <LinearLayout
         android:id="@+id/bottom_navigation"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:background="@color/white"
+        android:background="@color/background_secondary"
         android:elevation="8dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <!-- Питание -->
         <LinearLayout
             android:id="@+id/nav_food"
             android:layout_width="0dp"
@@ -39,24 +38,26 @@
             android:gravity="center"
             android:paddingVertical="12dp"
             android:clickable="true"
-            android:focusable="true">
+            android:focusable="true"
+            android:foreground="?attr/selectableItemBackground">
 
             <ImageView
+                android:id="@+id/nav_food_icon"
                 android:layout_width="24dp"
                 android:layout_height="24dp"
-                android:src="@android:drawable/ic_lock_lock"
-                app:tint="@color/gray" />
+                android:src="@drawable/eda"
+                android:tint="@color/text_secondary" />
 
             <TextView
+                android:id="@+id/nav_food_text"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Питание"
                 android:textSize="10sp"
-                android:textColor="@color/gray"
+                android:textColor="@color/text_secondary"
                 android:layout_marginTop="4dp" />
         </LinearLayout>
 
-        <!-- Тренировки -->
         <LinearLayout
             android:id="@+id/nav_workout"
             android:layout_width="0dp"
@@ -66,51 +67,26 @@
             android:gravity="center"
             android:paddingVertical="12dp"
             android:clickable="true"
-            android:focusable="true">
+            android:focusable="true"
+            android:foreground="?attr/selectableItemBackground">
 
             <ImageView
+                android:id="@+id/nav_workout_icon"
                 android:layout_width="24dp"
                 android:layout_height="24dp"
-                android:src="@android:drawable/ic_lock_lock"
-                app:tint="@color/gray" />
+                android:src="@drawable/tren"
+                android:tint="@color/text_secondary" />
 
             <TextView
+                android:id="@+id/nav_workout_text"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Тренировки"
                 android:textSize="10sp"
-                android:textColor="@color/gray"
+                android:textColor="@color/text_secondary"
                 android:layout_marginTop="4dp" />
         </LinearLayout>
 
-        <!-- Отчеты -->
-        <LinearLayout
-            android:id="@+id/nav_reports"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical"
-            android:gravity="center"
-            android:paddingVertical="12dp"
-            android:clickable="true"
-            android:focusable="true">
-
-            <ImageView
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:src="@android:drawable/ic_menu_report_image"
-                app:tint="@color/gray" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Отчеты"
-                android:textSize="10sp"
-                android:textColor="@color/gray"
-                android:layout_marginTop="4dp" />
-        </LinearLayout>
-
-        <!-- Профиль -->
         <LinearLayout
             android:id="@+id/nav_profile"
             android:layout_width="0dp"
@@ -120,20 +96,23 @@
             android:gravity="center"
             android:paddingVertical="12dp"
             android:clickable="true"
-            android:focusable="true">
+            android:focusable="true"
+            android:foreground="?attr/selectableItemBackground">
 
             <ImageView
+                android:id="@+id/nav_profile_icon"
                 android:layout_width="24dp"
                 android:layout_height="24dp"
-                android:src="@android:drawable/ic_menu_my_calendar"
-                app:tint="@color/gray" />
+                android:src="@drawable/profile"
+                android:tint="@color/text_secondary" />
 
             <TextView
+                android:id="@+id/nav_profile_text"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Профиль"
                 android:textSize="10sp"
-                android:textColor="@color/gray"
+                android:textColor="@color/text_secondary"
                 android:layout_marginTop="4dp" />
         </LinearLayout>
     </LinearLayout>

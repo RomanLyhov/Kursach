@@ -14,8 +14,10 @@ import com.example.fitplan.R
 import com.example.fitplan.ui.MainActivity3
 import com.example.fitplan.ui.NutritionFragment
 
+// Фрагмент для регистрации нового пользователя
 class Reg : Fragment() {
 
+    // Создание интерфейса фрагмента регистрации
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -23,6 +25,7 @@ class Reg : Fragment() {
     ): View? {
         val view = inflater.inflate(R.layout.fragment_reg, container, false)
 
+        // Инициализация элементов интерфейса для ввода данных
         val email = view.findViewById<EditText>(R.id.emailEditText)
         val password = view.findViewById<EditText>(R.id.passwordEditText)
         val password2 = view.findViewById<EditText>(R.id.confirmPasswordEditText)
@@ -36,6 +39,8 @@ class Reg : Fragment() {
         val maleBtn = view.findViewById<RadioButton>(R.id.maleRadioButton)
         val registerBtn = view.findViewById<Button>(R.id.registerButton)
         val loginLink = view.findViewById<TextView>(R.id.loginTextView)
+
+        // Кнопка для показа/скрытия пароля
         val eyeBtn = view.findViewById<TextView>(R.id.passwordToggle)
         eyeBtn.setOnClickListener {
             if (password.inputType == 129) {
@@ -49,6 +54,7 @@ class Reg : Fragment() {
 
         setupSpinners(activitySpinner, goalSpinner)
 
+        // Обработчик кнопки регистрации
         registerBtn.setOnClickListener {
             if (checkFields(email, password, password2, name)) {
                 saveUser(
@@ -66,6 +72,7 @@ class Reg : Fragment() {
             }
         }
 
+        // Обработчик ссылки для перехода к логину
         loginLink.setOnClickListener {
             parentFragmentManager.popBackStack()
         }
@@ -73,6 +80,7 @@ class Reg : Fragment() {
         return view
     }
 
+    // Настройка выпадающих списков (спиннеров)
     private fun setupSpinners(activitySpinner: Spinner, goalSpinner: Spinner) {
         activitySpinner.adapter = ArrayAdapter(
             requireContext(),
@@ -86,6 +94,7 @@ class Reg : Fragment() {
         )
     }
 
+    // Проверка заполненности обязательных полей
     private fun checkFields(email: EditText, password: EditText, password2: EditText, name: EditText): Boolean {
         when {
             email.text.isEmpty() -> { toast("Введите email"); return false }
@@ -96,6 +105,7 @@ class Reg : Fragment() {
         return true
     }
 
+    // Сохранение данных пользователя в базу данных
     private fun saveUser(
         email: String,
         password: String,
@@ -129,9 +139,12 @@ class Reg : Fragment() {
             val userId = dbHelper.addUser(user)
 
             if (userId != -1L) {
+                // Сохранение ID пользователя в SharedPreferences для сессии
                 val prefs = requireContext().getSharedPreferences("session", Context.MODE_PRIVATE)
                 prefs.edit().putLong("user_id", userId).apply()
                 toast("Регистрация успешна!")
+
+                // Переход к фрагменту питания после успешной регистрации
                 parentFragmentManager.beginTransaction()
                     .replace(R.id.fragment_container, NutritionFragment())
                     .commit()
@@ -144,6 +157,7 @@ class Reg : Fragment() {
         }
     }
 
+    // Вспомогательная функция для показа всплывающих сообщений
     private fun toast(text: String) {
         Toast.makeText(requireContext(), text, Toast.LENGTH_SHORT).show()
     }

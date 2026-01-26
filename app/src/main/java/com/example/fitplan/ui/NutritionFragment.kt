@@ -21,8 +21,10 @@ import com.example.fitplan.ui.models.DisplayMeal
 import kotlinx.coroutines.*
 import java.util.*
 
+// Фрагмент для отображения питания и подсчета калорий
 class NutritionFragment : Fragment() {
 
+    // Элементы интерфейса для отображения статистики питания
     private lateinit var calorieProgressBar: ProgressBar
     private lateinit var caloriesConsumedTextView: TextView
     private lateinit var caloriesRemainingTextView: TextView
@@ -32,8 +34,12 @@ class NutritionFragment : Fragment() {
     private lateinit var dailyGoalTextView: TextView
     private lateinit var mealsRecyclerView: RecyclerView
     private lateinit var dateTextView: TextView
+
+    // Список типов приемов пищи
     private val mealTypes = listOf("Завтрак", "Обед", "Ужин", "Перекус")
     private lateinit var mealsAdapter: MealsAdapter
+
+    // Переменные для подсчета дневных итогов
     private var loadMealsJob: Job? = null
     private var loadMealProductsJob: Job? = null
     private var dailyTotalCalories = 0
@@ -45,8 +51,10 @@ class NutritionFragment : Fragment() {
     private var dailyFatGoal = 55
     private var dailyCarbsGoal = 250
 
+    // Задача для периодической очистки данных
     private var cleanupJob: Job? = null
 
+    // Создание интерфейса фрагмента
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -60,6 +68,7 @@ class NutritionFragment : Fragment() {
         return view
     }
 
+    // Инициализация фрагмента после создания вида
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         loadMealsAsync()
@@ -67,6 +76,7 @@ class NutritionFragment : Fragment() {
         checkAndCleanupOldData()
     }
 
+    // Инициализация всех элементов интерфейса
     private fun initViews(view: View) {
         mealsRecyclerView = view.findViewById(R.id.mealsRecyclerView)
         calorieProgressBar = view.findViewById(R.id.calorieProgressBar)
@@ -77,11 +87,12 @@ class NutritionFragment : Fragment() {
         totalCarbsTextView = view.findViewById(R.id.totalCarbsTextView)
         dailyGoalTextView = view.findViewById(R.id.dailyGoalTextView)
         dateTextView = view.findViewById(R.id.dateTextView)
-        dailyGoalTextView.text = "Цель на день: $dailyGoal ккал"
+        dailyGoalTextView.text = "$dailyGoal ккал"
         val currentDate = getCurrentDateFormatted()
         dateTextView.text = currentDate
     }
 
+    // Настройка RecyclerView для отображения списка приемов пищи
     private fun setupRecyclerView() {
         mealsRecyclerView.layoutManager = LinearLayoutManager(requireContext())
         mealsRecyclerView.setHasFixedSize(true)
@@ -97,6 +108,7 @@ class NutritionFragment : Fragment() {
                 }
             },
             onMealClick = { mealTypeName ->
+                // Теперь этот колбек вызывается только при раскрытии карточки
                 loadMealProductsAsync(mealTypeName)
             },
             onEditProduct = { product, mealType ->
@@ -110,6 +122,7 @@ class NutritionFragment : Fragment() {
         mealsRecyclerView.adapter = mealsAdapter
     }
 
+    // Настройка слушателей результатов от других фрагментов
     private fun setupFragmentResultListener() {
         parentFragmentManager.setFragmentResultListener("meal_added", viewLifecycleOwner) { _, _ ->
             loadMealsAsync()
@@ -119,6 +132,7 @@ class NutritionFragment : Fragment() {
         }
     }
 
+    // Получение текущей даты в формате "день.месяц.год"
     private fun getCurrentDateFormatted(): String {
         val calendar = Calendar.getInstance()
         val day = calendar.get(Calendar.DAY_OF_MONTH)
@@ -127,6 +141,7 @@ class NutritionFragment : Fragment() {
         return "$day.$month.$year"
     }
 
+    // Проверка и очистка старых данных при смене дня
     private fun checkAndCleanupOldData() {
         viewLifecycleOwner.lifecycleScope.launch {
             try {
@@ -171,6 +186,7 @@ class NutritionFragment : Fragment() {
         }
     }
 
+    // Запуск периодической проверки на полночь для очистки данных
     private fun startDailyCleanupCheck() {
         cleanupJob?.cancel()
 
@@ -178,13 +194,14 @@ class NutritionFragment : Fragment() {
             while (isActive) {
                 try {
                     checkForMidnightCleanup()
-                    delay(60000)
+                    delay(60000) // Проверка каждую минуту
                 } catch (e: Exception) {
                 }
             }
         }
     }
 
+    // Проверка на наступление полночи
     private fun checkForMidnightCleanup() {
         val calendar = Calendar.getInstance()
         val currentHour = calendar.get(Calendar.HOUR_OF_DAY)
@@ -203,6 +220,7 @@ class NutritionFragment : Fragment() {
         }
     }
 
+    // Выполнение очистки данных в полночь
     private fun performMidnightCleanup() {
         viewLifecycleOwner.lifecycleScope.launch {
             try {
@@ -244,6 +262,7 @@ class NutritionFragment : Fragment() {
         }
     }
 
+    // Асинхронная загрузка данных о приемах пищи
     private fun loadMealsAsync() {
         loadMealsJob?.cancel()
 
@@ -325,6 +344,7 @@ class NutritionFragment : Fragment() {
         }
     }
 
+    // Обновление дневных целей из профиля пользователя
     private suspend fun updateDailyGoalsFromProfile(user: User) {
         val newDailyGoal = user.dailyCaloriesGoal ?: 2000
         val newProteinGoal = user.dailyProteinGoal ?: calculateDefaultProtein(user.weight ?: 70)
@@ -341,19 +361,22 @@ class NutritionFragment : Fragment() {
 
         withContext(Dispatchers.Main) {
             if (isAdded) {
-                dailyGoalTextView.text = "Цель на день: $dailyGoal ккал"
+                dailyGoalTextView.text = "$dailyGoal ккал"
             }
         }
     }
 
+    // Расчет дефолтного количества белков на основе веса
     private fun calculateDefaultProtein(weight: Int): Int {
         return (weight * 1.8).toInt()
     }
 
+    // Расчет дефолтного количества жиров на основе калорий
     private fun calculateDefaultFat(dailyCalories: Int): Int {
         return ((dailyCalories * 0.25) / 9).toInt()
     }
 
+    // Расчет дефолтного количества углеводов
     private fun calculateDefaultCarbs(dailyCalories: Int, proteinGrams: Int, fatGrams: Int): Int {
         val proteinCalories = proteinGrams * 4
         val fatCalories = fatGrams * 9
@@ -361,6 +384,7 @@ class NutritionFragment : Fragment() {
         return (remainingCalories / 4).toInt()
     }
 
+    // Загрузка продуктов для конкретного приема пищи
     private fun loadMealProductsAsync(mealType: String) {
         loadMealProductsJob?.cancel()
 
@@ -385,6 +409,7 @@ class NutritionFragment : Fragment() {
 
                 withContext(Dispatchers.Main) {
                     if (isAdded) {
+                        // Обновляем продукты в адаптере
                         mealsAdapter.updateMealProducts(mealType, mealProducts)
                     }
                 }
@@ -399,6 +424,7 @@ class NutritionFragment : Fragment() {
         }
     }
 
+    // Обновление дневной статистики на экране
     private fun updateDailySummary() {
         calorieProgressBar.max = dailyGoal
         calorieProgressBar.progress = dailyTotalCalories.coerceAtMost(dailyGoal)
@@ -426,6 +452,7 @@ class NutritionFragment : Fragment() {
         }
     }
 
+    // Сброс дневной статистики к нулевым значениям
     private fun resetDailySummary() {
         dailyTotalCalories = 0
         dailyTotalProtein = 0
@@ -440,6 +467,7 @@ class NutritionFragment : Fragment() {
         totalCarbsTextView.text = "0 / $dailyCarbsGoal г"
     }
 
+    // Очистка ресурсов при уничтожении вида
     override fun onDestroyView() {
         super.onDestroyView()
         loadMealsJob?.cancel()
@@ -447,6 +475,7 @@ class NutritionFragment : Fragment() {
         cleanupJob?.cancel()
     }
 
+    // Редактирование количества продукта в приеме пищи
     private fun editMealProduct(product: MealProductDisplay, mealType: String) {
         val input = EditText(requireContext()).apply {
             setText(product.quantity.toString())
@@ -469,6 +498,7 @@ class NutritionFragment : Fragment() {
             .show()
     }
 
+    // Обновление количества продукта в базе данных
     private fun updateMealProduct(product: MealProductDisplay, newQuantity: Int, mealType: String) {
         viewLifecycleOwner.lifecycleScope.launch {
             try {
@@ -519,6 +549,7 @@ class NutritionFragment : Fragment() {
         }
     }
 
+    // Удаление продукта из приема пищи
     private fun deleteMealProduct(product: MealProductDisplay, mealType: String) {
         android.app.AlertDialog.Builder(requireContext())
             .setTitle("Удалить продукт")
@@ -530,6 +561,7 @@ class NutritionFragment : Fragment() {
             .show()
     }
 
+    // Выполнение удаления продукта из базы данных
     private fun performDeleteMealProduct(product: MealProductDisplay, mealType: String) {
         viewLifecycleOwner.lifecycleScope.launch {
             try {

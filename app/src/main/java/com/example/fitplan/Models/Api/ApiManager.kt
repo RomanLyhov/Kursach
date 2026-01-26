@@ -2,7 +2,9 @@ package com.example.fitplan.Models.Api
 
 import android.util.Log
 import com.example.fitplan.Models.Product
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 
 object ApiManager {
@@ -12,9 +14,10 @@ object ApiManager {
     suspend fun searchProducts(query: String): List<Product> {
         return withContext(Dispatchers.IO) {
             try {
+                ensureActive()
+
                 Log.d("ApiManager", "Searching for: $query")
 
-                // Выполняем запрос к API
                 val response = foodApi.searchProducts(
                     query = query,
                     simple = 1,
@@ -23,15 +26,21 @@ object ApiManager {
                     pageSize = 20
                 )
 
+                ensureActive()
+
                 Log.d("ApiManager", "Got response: ${response.products.size} products")
 
-                // Конвертируем API продукты в локальные
                 convertApiProducts(response.products)
 
+            } catch (e: CancellationException) {
+                emptyList()
             } catch (e: Exception) {
-                Log.e("ApiManager", "API Error: ${e.message}", e)
-                // В случае ошибки возвращаем моковые данные
-                searchMockProducts(query)
+                if (e.cause is CancellationException) {
+                    emptyList()
+                } else {
+                    Log.e("ApiManager", "API Error", e)
+                    searchMockProducts(query)
+                }
             }
         }
     }
@@ -42,35 +51,30 @@ object ApiManager {
                 val name = apiProduct.productName ?: return@mapNotNull null
                 val nutriments = apiProduct.nutriments ?: return@mapNotNull null
 
-                // Получаем значения (используем 0f если null)
                 val calories = nutriments.energyKcal100g ?: 0f
                 val protein = nutriments.proteins ?: 0f
                 val fat = nutriments.fat ?: 0f
                 val carbs = nutriments.carbohydrates ?: 0f
 
-                // Проверяем, есть ли хоть какие-то данные
                 if (calories == 0f && protein == 0f && fat == 0f && carbs == 0f) {
-                    return@mapNotNull null // Пропускаем продукты без данных
+                    return@mapNotNull null
                 }
 
                 Product(
-                    id = 0, // Будет присвоено при сохранении в БД
+                    id = 0,
                     name = name.trim(),
                     calories = calories,
                     protein = protein,
                     fat = fat,
                     carbs = carbs
-                ).apply {
-                    Log.d("ApiManager", "Converted: $name - $calories kcal")
-                }
+                )
             } catch (e: Exception) {
-                Log.e("ApiManager", "Error converting product: ${e.message}")
+                Log.e("ApiManager", "Error converting product", e)
                 null
             }
         }
     }
 
-    // Моковые данные для тестирования
     private val mockProducts = listOf(
         Product(0, "Куриная грудка", 165f, 31f, 3.6f, 0f),
         Product(0, "Яблоко", 52f, 0.3f, 0.2f, 14f),

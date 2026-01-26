@@ -13,11 +13,14 @@ import com.example.fitplan.R
 import com.example.fitplan.ui.login.Login
 import kotlinx.coroutines.*
 
+// Фрагмент для отображения профиля пользователя
 class ProfileFragment : Fragment() {
 
+    // Переменные для работы с базой данных и идентификатором пользователя
     private lateinit var db: DatabaseHelper
     private var userId: Long = -1L
 
+    // Элементы интерфейса для отображения информации о пользователе
     private lateinit var tvName: TextView
     private lateinit var tvEmail: TextView
     private lateinit var tvAge: TextView
@@ -29,11 +32,13 @@ class ProfileFragment : Fragment() {
     private lateinit var btnLogout: Button
     private lateinit var btnEditProfile: Button
 
+    // Элементы для отображения дневных целей питания
     private lateinit var tvDailyCalories: TextView
     private lateinit var tvProteinGoal: TextView
     private lateinit var tvFatGoal: TextView
     private lateinit var tvCarbsGoal: TextView
 
+    // Создание интерфейса фрагмента
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -43,9 +48,11 @@ class ProfileFragment : Fragment() {
 
         db = DatabaseHelper(requireContext())
 
+        // Получение ID пользователя из SharedPreferences
         val prefs = requireContext().getSharedPreferences("session", Context.MODE_PRIVATE)
         userId = prefs.getLong("user_id", -1L)
 
+        // Инициализация элементов интерфейса
         tvName = view.findViewById(R.id.userNameTextView)
         tvEmail = view.findViewById(R.id.userEmailTextView)
         tvAge = view.findViewById(R.id.ageTextView)
@@ -62,6 +69,7 @@ class ProfileFragment : Fragment() {
         tvFatGoal = view.findViewById(R.id.fatGoalTextView)
         tvCarbsGoal = view.findViewById(R.id.carbsGoalTextView)
 
+        // Настройка обработчиков кнопок
         btnLogout.setOnClickListener { logout() }
         btnEditProfile.setOnClickListener {
             val mainActivity = activity as? MainActivity3
@@ -80,6 +88,7 @@ class ProfileFragment : Fragment() {
         return view
     }
 
+    // Загрузка данных пользователя из базы данных
     private fun loadUser() {
         if (userId == -1L) return
 
@@ -96,6 +105,7 @@ class ProfileFragment : Fragment() {
         }
     }
 
+    // Обновление данных пользователя (используется после редактирования)
     private fun refreshUserData() {
         if (userId == -1L) return
 
@@ -111,25 +121,27 @@ class ProfileFragment : Fragment() {
         }
     }
 
+    // Обновление интерфейса с данными пользователя
     private fun updateUI(user: User) {
         tvName.text = user.name
         tvEmail.text = user.email
         tvAge.text = user.age?.toString() ?: "-"
-        tvHeight.text = "${user.height?.toString() ?: "-"} см"
-        tvWeight.text = "${user.weight?.toString() ?: "-"} кг"
-        tvTargetWeight.text = "${user.targetWeight?.toString() ?: "-"} кг"
+        tvHeight.text = "${user.height?.toString() ?: "-"} "
+        tvWeight.text = "${user.weight?.toString() ?: "-"} "
+        tvTargetWeight.text = "${user.targetWeight?.toString() ?: "-"} "
         tvActivity.text = translateActivityLevel(user.activity)
         tvGoal.text = translateGoal(user.goal)
         val caloriesGoal = user.dailyCaloriesGoal?.toString() ?: "-"
         val proteinGoal = user.dailyProteinGoal?.toString() ?: "-"
         val fatGoal = user.dailyFatGoal?.toString() ?: "-"
         val carbsGoal = user.dailyCarbsGoal?.toString() ?: "-"
-        tvDailyCalories.text = "Калории в день: $caloriesGoal ккал"
-        tvProteinGoal.text = "Белки: $proteinGoal г"
-        tvFatGoal.text = "Жиры: $fatGoal г"
-        tvCarbsGoal.text = "Углеводы: $carbsGoal г"
+        tvDailyCalories.text = "$caloriesGoal"
+        tvProteinGoal.text = "$proteinGoal "
+        tvFatGoal.text = "$fatGoal "
+        tvCarbsGoal.text = "$carbsGoal "
     }
 
+    // Перевод уровня активности на русский язык
     private fun translateActivityLevel(activityLevel: String?): String {
         return when (activityLevel?.toUpperCase()) {
             "LIGHT" -> "Малая активность"
@@ -139,6 +151,7 @@ class ProfileFragment : Fragment() {
         }
     }
 
+    // Перевод цели пользователя на русский язык
     private fun translateGoal(goal: String?): String {
         return when (goal?.toUpperCase()) {
             "WEIGHT_LOSS" -> "Снижение веса"
@@ -148,6 +161,7 @@ class ProfileFragment : Fragment() {
         }
     }
 
+    // Выход из аккаунта (очистка сессии и переход к экрану входа)
     private fun logout() {
         requireContext().getSharedPreferences("session", Context.MODE_PRIVATE)
             .edit().clear().apply()

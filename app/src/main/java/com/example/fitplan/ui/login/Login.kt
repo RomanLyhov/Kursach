@@ -19,8 +19,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+// Фрагмент для входа в систему пользователя
 class Login : Fragment() {
 
+    // Создание интерфейса фрагмента входа
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -28,13 +30,14 @@ class Login : Fragment() {
     ): View {
         val view = inflater.inflate(R.layout.fragment_login, container, false)
 
+        // Инициализация элементов интерфейса для ввода данных
         val emailInput = view.findViewById<EditText>(R.id.loginEditText)
         val passwordInput = view.findViewById<EditText>(R.id.passwordEditText)
         val loginBtn = view.findViewById<Button>(R.id.loginButton)
         val registerBtn = view.findViewById<Button>(R.id.registerButton)
         val eyeBtn = view.findViewById<TextView>(R.id.passwordToggle)
 
-        // переключение видимости пароля
+        // Обработчик для переключения видимости пароля
         eyeBtn.setOnClickListener {
             if (passwordInput.inputType == InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD) {
                 passwordInput.inputType = InputType.TYPE_CLASS_TEXT
@@ -46,7 +49,7 @@ class Login : Fragment() {
             passwordInput.setSelection(passwordInput.text.length)
         }
 
-        // кнопка входа
+        // Обработчик кнопки входа в систему
         loginBtn.setOnClickListener {
             val email = emailInput.text.toString().trim()
             val password = passwordInput.text.toString().trim()
@@ -58,7 +61,7 @@ class Login : Fragment() {
             }
         }
 
-        // кнопка регистрации
+        // Обработчик кнопки регистрации (переход к фрагменту регистрации)
         registerBtn.setOnClickListener {
             parentFragmentManager.beginTransaction()
                 .replace(R.id.fragment_container, Reg())
@@ -69,6 +72,7 @@ class Login : Fragment() {
         return view
     }
 
+    // Проверка данных для входа в систему
     private fun checkLogin(email: String, password: String) {
         CoroutineScope(Dispatchers.IO).launch {
             try {
@@ -77,16 +81,16 @@ class Login : Fragment() {
 
                 withContext(Dispatchers.Main) {
                     if (user != null) {
-                        // сохраняем user_id
+                        // Сохранение ID пользователя в SharedPreferences для сессии
                         val prefs = requireContext().getSharedPreferences("session", Context.MODE_PRIVATE)
                         prefs.edit().putLong("user_id", user.id).apply()
 
-                        // обновляем currentUser
+                        // Обновление текущего пользователя в MainActivity
                         (activity as? MainActivity3)?.currentUser = user
 
                         Toast.makeText(requireContext(), "Добро пожаловать, ${user.name}!", Toast.LENGTH_SHORT).show()
 
-                        // показываем панель и открываем профиль
+                        // Показываем панель навигации и открываем основной интерфейс
                         (activity as? MainActivity3)?.onLoginSuccess(user.id)
 
                     } else {

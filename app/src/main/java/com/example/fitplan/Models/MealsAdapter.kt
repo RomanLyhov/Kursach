@@ -1,4 +1,3 @@
-// MealsAdapter.kt в com.example.fitplan.ui.adapters
 package com.example.fitplan.ui.adapters
 
 import android.view.LayoutInflater
@@ -29,37 +28,72 @@ class MealsAdapter(
         private val btnAddMealItem: Button = v.findViewById(R.id.btnAddMealItem)
         private val productsContainer: LinearLayout = v.findViewById(R.id.productsContainer)
         private val arrowIcon: TextView = v.findViewById(R.id.arrowIcon)
+        private val topRowLayout: LinearLayout = v.findViewById(R.id.topRowLayout)
 
         fun bind(meal: DisplayMeal) {
-            arrowIcon.text = if (meal.isExpanded) "▼" else "▶"
+            arrowIcon.text = if (expandedMeals.contains(meal.mealType)) "▼" else "▶"
             tvMealName.text = meal.mealType
-            tvMealCalories.text = "${meal.totalCalories} ккал"
-            tvMealDescription.text = meal.description
+            tvMealCalories.text = "${meal.totalCalories}"
 
-            productsContainer.visibility = if (meal.isExpanded) View.VISIBLE else View.GONE
+            // Обновляем описание в зависимости от наличия продуктов
+            if (meal.productCount > 0) {
+                tvMealDescription.text = "${meal.productCount} продукт(ов) • ${meal.totalCalories} ккал"
+                tvMealCalories.setTextColor(itemView.context.resources.getColor(android.R.color.holo_green_dark, null))
+                tvMealDescription.setTextColor(itemView.context.resources.getColor(android.R.color.darker_gray, null))
+            } else {
+                tvMealDescription.text = "Нет добавленных продуктов"
+                tvMealCalories.setTextColor(itemView.context.resources.getColor(android.R.color.darker_gray, null))
+                tvMealDescription.setTextColor(itemView.context.resources.getColor(android.R.color.darker_gray, null))
+            }
 
-            if (meal.isExpanded) {
+            // Показываем/скрываем контейнер с продуктами
+            productsContainer.visibility = if (expandedMeals.contains(meal.mealType)) View.VISIBLE else View.GONE
+
+            // Заполняем контейнер продуктами, если он раскрыт
+            if (expandedMeals.contains(meal.mealType)) {
                 val products = mealProductsMap[meal.mealType] ?: emptyList()
                 fillProductsContainer(products, meal.mealType)
             }
 
+            // Обработка клика на верхнюю строку (стрелочка + название + калории)
+            topRowLayout.setOnClickListener {
+                val position = adapterPosition
+                if (position != RecyclerView.NO_POSITION) {
+                    toggleExpansion(meal.mealType)
+                }
+            }
+
+            // Обработка клика на карточку (кроме верхней строки и кнопки)
             cardRoot.setOnClickListener {
                 val position = adapterPosition
                 if (position != RecyclerView.NO_POSITION) {
-                    onMealClick(meal.mealType)
+                    toggleExpansion(meal.mealType)
+                }
+            }
+
+            // Обработка клика на стрелочку
+            arrowIcon.setOnClickListener {
+                val position = adapterPosition
+                if (position != RecyclerView.NO_POSITION) {
+                    toggleExpansion(meal.mealType)
                 }
             }
 
             btnAddMealItem.setOnClickListener {
                 onAddClick(meal.mealType)
             }
+        }
 
-            if (meal.productCount > 0) {
-                tvMealCalories.setTextColor(itemView.context.resources.getColor(android.R.color.holo_green_dark, null))
-                tvMealDescription.setTextColor(itemView.context.resources.getColor(android.R.color.darker_gray, null))
-            } else {
-                tvMealCalories.setTextColor(itemView.context.resources.getColor(android.R.color.darker_gray, null))
-                tvMealDescription.setTextColor(itemView.context.resources.getColor(android.R.color.darker_gray, null))
+        private fun toggleExpansion(mealType: String) {
+            val position = meals.indexOfFirst { it.mealType == mealType }
+            if (position != -1) {
+                if (expandedMeals.contains(mealType)) {
+                    expandedMeals.remove(mealType)
+                } else {
+                    expandedMeals.add(mealType)
+                    onMealClick(mealType)
+                }
+                notifyItemChanged(position)
             }
         }
 
@@ -69,94 +103,56 @@ class MealsAdapter(
             if (products.isEmpty()) {
                 val textView = TextView(itemView.context).apply {
                     text = "Нет продуктов"
-                    setPadding(16, 8, 16, 8)
+                    setPadding(16, 16, 16, 16)
                     textSize = 14f
+                    gravity = View.TEXT_ALIGNMENT_CENTER
                     setTextColor(itemView.context.resources.getColor(android.R.color.darker_gray, null))
                 }
                 productsContainer.addView(textView)
                 return
             }
 
+            // Используем product_item.xml для каждого продукта
             products.forEach { product ->
-                val productView = createProductView(product, mealType)
+                val productView = LayoutInflater.from(itemView.context)
+                    .inflate(R.layout.card_product, null) // Исправлено на product_item
+
+                bindProductView(productView, product, mealType)
                 productsContainer.addView(productView)
             }
         }
 
-        private fun createProductView(product: MealProductDisplay, mealType: String): View {
-            val linearLayout = LinearLayout(itemView.context).apply {
-                orientation = LinearLayout.VERTICAL
-                setBackgroundColor(0xFFF5F5F5.toInt())
-                setPadding(16, 12, 16, 12)
-                layoutParams = LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT
-                ).apply {
-                    bottomMargin = 8
-                }
+        private fun bindProductView(productView: View, product: MealProductDisplay, mealType: String) {
+            val tvProductName: TextView = productView.findViewById(R.id.tvProductName)
+            val tvPortionSize: TextView = productView.findViewById(R.id.tvPortionSize)
+            val tvProductCalories: TextView = productView.findViewById(R.id.tvProductCalories)
+            val tvProteinAmount: TextView = productView.findViewById(R.id.tvProteinAmount)
+            val tvFatAmount: TextView = productView.findViewById(R.id.tvFatAmount)
+            val tvCarbsAmount: TextView = productView.findViewById(R.id.tvCarbsAmount)
+            val btnDeleteProduct: TextView = productView.findViewById(R.id.btnDeleteProduct)
+            val btnEditProduct: Button = productView.findViewById(R.id.btnEditProduct)
+
+            // Устанавливаем данные продукта
+            tvProductName.text = product.productName
+            tvPortionSize.text = "${product.quantity} г"
+            tvProductCalories.text = product.calories.toInt().toString()
+            tvProteinAmount.text = product.protein.toInt().toString()
+            tvFatAmount.text = product.fat.toInt().toString()
+            tvCarbsAmount.text = product.carbs.toInt().toString()
+
+            // Обработчики для кнопок удаления и редактирования
+            btnDeleteProduct.setOnClickListener {
+                onDeleteProduct(product, mealType)
             }
 
-            val nameTextView = TextView(itemView.context).apply {
-                text = product.productName
-                textSize = 16f
-                setTextColor(itemView.context.resources.getColor(android.R.color.black, null))
+            btnEditProduct.setOnClickListener {
+                onEditProduct(product, mealType)
             }
 
-            val detailsTextView = TextView(itemView.context).apply {
-                text = "${product.quantity} г • ${product.calories.toInt()} ккал"
-                textSize = 14f
-                setTextColor(itemView.context.resources.getColor(android.R.color.darker_gray, null))
+            // Клик на карточку продукта тоже вызывает редактирование
+            productView.findViewById<View>(R.id.productCardRoot).setOnClickListener {
+                onEditProduct(product, mealType)
             }
-
-            val macrosTextView = TextView(itemView.context).apply {
-                text = "Б: ${product.protein.toInt()}г Ж: ${product.fat.toInt()}г У: ${product.carbs.toInt()}г"
-                textSize = 12f
-                setTextColor(itemView.context.resources.getColor(android.R.color.darker_gray, null))
-            }
-
-            val buttonsLayout = LinearLayout(itemView.context).apply {
-                orientation = LinearLayout.HORIZONTAL
-                layoutParams = LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT
-                ).apply {
-                    topMargin = 8
-                }
-            }
-
-            val editButton = Button(itemView.context).apply {
-                text = "✏"
-                setOnClickListener { onEditProduct(product, mealType) }
-                layoutParams = LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.WRAP_CONTENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT
-                )
-                setBackgroundColor(0x00000000)
-                setTextColor(itemView.context.resources.getColor(android.R.color.holo_blue_dark, null))
-            }
-
-            val deleteButton = Button(itemView.context).apply {
-                text = "✕"
-                setOnClickListener { onDeleteProduct(product, mealType) }
-                layoutParams = LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.WRAP_CONTENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT
-                ).apply {
-                    leftMargin = 16
-                }
-                setBackgroundColor(0x00000000)
-                setTextColor(itemView.context.resources.getColor(android.R.color.holo_red_dark, null))
-            }
-
-            buttonsLayout.addView(editButton)
-            buttonsLayout.addView(deleteButton)
-
-            linearLayout.addView(nameTextView)
-            linearLayout.addView(detailsTextView)
-            linearLayout.addView(macrosTextView)
-            linearLayout.addView(buttonsLayout)
-
-            return linearLayout
         }
     }
 
@@ -179,22 +175,32 @@ class MealsAdapter(
     }
 
     fun updateMealProducts(mealType: String, products: List<MealProductDisplay>) {
-        if (expandedMeals.contains(mealType)) {
-            expandedMeals.remove(mealType)
-        } else {
-            expandedMeals.add(mealType)
-            mealProductsMap[mealType] = products
-        }
+        mealProductsMap[mealType] = products
 
-        val position = meals.indexOfFirst { it.mealType == mealType }
-        if (position != -1) {
-            val meal = meals[position]
-            meals[position] = meal.copy(isExpanded = expandedMeals.contains(mealType))
-            notifyItemChanged(position)
+        // Если прием пищи уже раскрыт, обновляем его
+        if (expandedMeals.contains(mealType)) {
+            val position = meals.indexOfFirst { it.mealType == mealType }
+            if (position != -1) {
+                notifyItemChanged(position)
+            }
         }
     }
 
     fun isMealExpanded(mealType: String): Boolean {
         return expandedMeals.contains(mealType)
+    }
+
+    // Добавляем метод для ручного переключения раскрытия
+    fun toggleMealExpansion(mealType: String) {
+        if (expandedMeals.contains(mealType)) {
+            expandedMeals.remove(mealType)
+        } else {
+            expandedMeals.add(mealType)
+        }
+
+        val position = meals.indexOfFirst { it.mealType == mealType }
+        if (position != -1) {
+            notifyItemChanged(position)
+        }
     }
 }

@@ -138,17 +138,17 @@ class DatabaseHelper(context: Context) :
                     archive_date INTEGER
                 )
             """)
-            Log.d("DB", "✓ Table $TABLE_NUTRITION_ARCHIVE created")
+            Log.d("DB", " Table $TABLE_NUTRITION_ARCHIVE created")
 
             db.execSQL("""
                 CREATE INDEX idx_products_name ON $TABLE_PRODUCTS($COL_NAME COLLATE NOCASE)
             """)
-            Log.d("DB", "✓ Index idx_products_name created")
+            Log.d("DB", " Index idx_products_name created")
 
             checkAllTablesCreated(db)
 
         } catch (e: Exception) {
-            Log.e("DB", "❌ ERROR creating tables: ${e.message}")
+            Log.e("DB", " ERROR creating tables: ${e.message}")
             Log.e("DB", "Stack trace:", e)
             throw e
         }
@@ -177,20 +177,20 @@ class DatabaseHelper(context: Context) :
 
         expectedTables.forEach { table ->
             if (table in createdTables) {
-                Log.d("DB", "✅ Таблица '$table' создана")
+                Log.d("DB", " Таблица '$table' создана")
             } else {
-                Log.e("DB", "❌ Таблица '$table' НЕ создана!")
+                Log.e("DB", " Таблица '$table' НЕ создана!")
             }
         }
         Log.d("DB", "=== Проверка завершена ===")
     }
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
-        Log.d("DB", "‼️ FORCED UPGRADE: Dropping all tables and recreating...")
+        Log.d("DB", "‼ FORCED UPGRADE: Dropping all tables and recreating...")
         dropAllTables(db)
         createTables(db)
 
-        Log.d("DB", "✅ Database upgrade completed successfully")
+        Log.d("DB", " Database upgrade completed successfully")
     }
 
     private fun dropAllTables(db: SQLiteDatabase) {
@@ -236,7 +236,7 @@ class DatabaseHelper(context: Context) :
 
         expectedTables.forEach { table ->
             if (table !in existingTables) {
-                Log.e("DB", "⚠️ Table $table is missing! Recreating...")
+                Log.e("DB", " Table $table is missing! Recreating...")
                 createMissingTable(db, table)
             }
         }
@@ -345,7 +345,7 @@ class DatabaseHelper(context: Context) :
                 """)
             }
         }
-        Log.d("DB", "✅ Created missing table: $tableName")
+        Log.d("DB", " Created missing table: $tableName")
     }
     private fun getIntOrNull(cursor: android.database.Cursor, columnName: String): Int? {
         val index = cursor.getColumnIndex(columnName)

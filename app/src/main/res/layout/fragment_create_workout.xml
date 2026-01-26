@@ -1,226 +1,287 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#FFFFFF"
-    android:padding="16dp">
+    android:background="@color/background_primary"
+    android:orientation="vertical">
 
-    <LinearLayout
-        android:layout_width="match_parent"
+    <Button
+        android:id="@+id/btnBack"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:text="←"
+        android:textSize="18sp"
+        android:textColor="@color/text_primary"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:padding="16dp" />
 
-        <!-- Название тренировки -->
-        <EditText
-            android:id="@+id/etWorkoutName"
-            android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:hint="Название тренировки"
-            android:textSize="16sp"
-            android:padding="12dp"
-            android:background="#F5F5F5"
-            android:layout_marginBottom="16dp" />
-
-        <!-- Шапка формы упражнения -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Добавить упражнение"
-            android:textSize="18sp"
-            android:textColor="#000000"
-            android:layout_marginBottom="12dp" />
-
-        <!-- Поля для упражнения -->
-        <EditText
-            android:id="@+id/etExerciseName"
-            android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:hint="Название упражнения"
-            android:padding="12dp"
-            android:background="#F5F5F5"
-            android:textSize="16sp"
-            android:layout_marginBottom="8dp" />
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:padding="8dp">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginBottom="8dp">
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Новая тренировка"
+                android:textSize="22sp"
+                android:textStyle="bold"
+                android:textColor="@color/text_primary"
+                android:layout_marginHorizontal="16dp"
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="24dp" />
 
             <LinearLayout
-                android:layout_width="0dp"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="vertical">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Подходы"
-                    android:textColor="#666666"
-                    android:textSize="14sp"
-                    android:layout_marginBottom="4dp" />
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="48dp"
-                    android:orientation="horizontal"
-                    android:background="#F5F5F5">
-
-                    <TextView
-                        android:id="@+id/btnDecreaseSets"
-                        android:layout_width="48dp"
-                        android:layout_height="match_parent"
-                        android:text="-"
-                        android:gravity="center"
-                        android:textSize="20sp"
-                        android:textColor="#2196F3" />
-
-                    <TextView
-                        android:id="@+id/tvSetsCount"
-                        android:layout_width="0dp"
-                        android:layout_height="match_parent"
-                        android:layout_weight="1"
-                        android:text="3"
-                        android:gravity="center"
-                        android:textSize="18sp"
-                        android:textColor="#000000" />
-
-                    <TextView
-                        android:id="@+id/btnIncreaseSets"
-                        android:layout_width="48dp"
-                        android:layout_height="match_parent"
-                        android:text="+"
-                        android:gravity="center"
-                        android:textSize="20sp"
-                        android:textColor="#2196F3" />
-                </LinearLayout>
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
                 android:orientation="vertical"
-                android:layout_marginStart="8dp">
+                android:background="@color/background_secondary"
+                android:padding="16dp"
+                android:layout_marginHorizontal="8dp"
+                android:layout_marginBottom="16dp"
+                android:elevation="2dp">
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Повторения"
-                    android:textColor="#666666"
+                    android:text="Название тренировки"
                     android:textSize="14sp"
-                    android:layout_marginBottom="4dp" />
+                    android:textColor="@color/text_secondary"
+                    android:layout_marginBottom="8dp" />
+
+                <EditText
+                    android:id="@+id/etWorkoutName"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:hint="Например: Силовая грудь"
+                    android:textSize="14sp"
+                    android:textColor="@color/text_primary"
+                    android:paddingHorizontal="12dp"
+                    android:gravity="center_vertical"
+                    android:imeOptions="actionNext"
+                    android:background="@color/background_tertiary"
+                    android:layout_marginBottom="16dp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Добавить упражнение"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/text_primary"
+                    android:layout_marginBottom="12dp"
+                    android:drawablePadding="8dp" />
+
+                <EditText
+                    android:id="@+id/etExerciseName"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:hint="Название упражнения"
+                    android:textSize="14sp"
+                    android:textColor="@color/text_primary"
+                    android:paddingHorizontal="12dp"
+                    android:gravity="center_vertical"
+                    android:imeOptions="actionNext"
+                    android:background="@color/background_tertiary"
+                    android:layout_marginBottom="12dp" />
 
                 <LinearLayout
                     android:layout_width="match_parent"
-                    android:layout_height="48dp"
+                    android:layout_height="wrap_content"
                     android:orientation="horizontal"
-                    android:background="#F5F5F5">
+                    android:layout_marginBottom="12dp">
 
-                    <TextView
-                        android:id="@+id/btnDecreaseReps"
-                        android:layout_width="48dp"
-                        android:layout_height="match_parent"
-                        android:text="-"
-                        android:gravity="center"
-                        android:textSize="20sp"
-                        android:textColor="#2196F3" />
-
-                    <TextView
-                        android:id="@+id/tvRepsCount"
+                    <LinearLayout
                         android:layout_width="0dp"
-                        android:layout_height="match_parent"
+                        android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="10"
-                        android:gravity="center"
-                        android:textSize="18sp"
-                        android:textColor="#000000" />
+                        android:orientation="vertical"
+                        android:layout_marginEnd="4dp">
 
-                    <TextView
-                        android:id="@+id/btnIncreaseReps"
-                        android:layout_width="48dp"
-                        android:layout_height="match_parent"
-                        android:text="+"
-                        android:gravity="center"
-                        android:textSize="20sp"
-                        android:textColor="#2196F3" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="ПОДХОДЫ"
+                            android:textSize="10sp"
+                            android:textColor="@color/text_hint"
+                            android:textAllCaps="true"
+                            android:layout_marginBottom="4dp" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="48dp"
+                            android:orientation="horizontal"
+                            android:background="@color/background_tertiary">
+
+                            <TextView
+                                android:id="@+id/btnDecreaseSets"
+                                android:layout_width="40dp"
+                                android:layout_height="match_parent"
+                                android:text="-"
+                                android:gravity="center"
+                                android:textSize="20sp"
+                                android:textColor="@color/text_secondary" />
+
+                            <TextView
+                                android:id="@+id/tvSetsCount"
+                                android:layout_width="0dp"
+                                android:layout_height="match_parent"
+                                android:layout_weight="1"
+                                android:text="3"
+                                android:gravity="center"
+                                android:textSize="18sp"
+                                android:textColor="@color/text_primary" />
+
+                            <TextView
+                                android:id="@+id/btnIncreaseSets"
+                                android:layout_width="40dp"
+                                android:layout_height="match_parent"
+                                android:text="+"
+                                android:gravity="center"
+                                android:textSize="20sp"
+                                android:textColor="@color/text_secondary" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:layout_marginStart="4dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="ПОВТОРЕНИЯ"
+                            android:textSize="10sp"
+                            android:textColor="@color/text_hint"
+                            android:textAllCaps="true"
+                            android:layout_marginBottom="4dp" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="48dp"
+                            android:orientation="horizontal"
+                            android:background="@color/background_tertiary">
+
+                            <TextView
+                                android:id="@+id/btnDecreaseReps"
+                                android:layout_width="40dp"
+                                android:layout_height="match_parent"
+                                android:text="-"
+                                android:gravity="center"
+                                android:textSize="20sp"
+                                android:textColor="@color/text_secondary" />
+
+                            <TextView
+                                android:id="@+id/tvRepsCount"
+                                android:layout_width="0dp"
+                                android:layout_height="match_parent"
+                                android:layout_weight="1"
+                                android:text="10"
+                                android:gravity="center"
+                                android:textSize="18sp"
+                                android:textColor="@color/text_primary" />
+
+                            <TextView
+                                android:id="@+id/btnIncreaseReps"
+                                android:layout_width="40dp"
+                                android:layout_height="match_parent"
+                                android:text="+"
+                                android:gravity="center"
+                                android:textSize="20sp"
+                                android:textColor="@color/text_secondary" />
+                        </LinearLayout>
+                    </LinearLayout>
                 </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="16dp">
+
+                    <EditText
+                        android:id="@+id/etWeight"
+                        android:layout_width="0dp"
+                        android:layout_height="48dp"
+                        android:layout_weight="1"
+                        android:hint="Вес (кг)"
+                        android:text="0"
+                        android:textSize="14sp"
+                        android:textColor="@color/text_primary"
+                        android:paddingHorizontal="12dp"
+                        android:gravity="center_vertical"
+                        android:inputType="numberDecimal"
+                        android:imeOptions="actionNext"
+                        android:background="@color/background_tertiary"
+                        android:layout_marginEnd="4dp" />
+
+                    <EditText
+                        android:id="@+id/etRestTime"
+                        android:layout_width="0dp"
+                        android:layout_height="48dp"
+                        android:layout_weight="1"
+                        android:hint="Отдых (сек)"
+                        android:text="90"
+                        android:textSize="14sp"
+                        android:textColor="@color/text_primary"
+                        android:paddingHorizontal="12dp"
+                        android:gravity="center_vertical"
+                        android:inputType="number"
+                        android:imeOptions="actionDone"
+                        android:background="@color/background_tertiary"
+                        android:layout_marginStart="4dp" />
+                </LinearLayout>
+
+                <Button
+                    android:id="@+id/createWorkoutButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:text="Добавить упражнение"
+                    android:textSize="14sp"
+                    android:textColor="@color/button_primary_text"
+                    android:backgroundTint="@color/accent_training"
+                    android:layout_marginBottom="12dp" />
+
+                <TextView
+                    android:id="@+id/tvExercisesCount"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="0 упражнений"
+                    android:textSize="12sp"
+                    android:textColor="@color/text_secondary"
+                    android:gravity="center" />
             </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/containerExercises"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingHorizontal="8dp" />
+
+            <Button
+                android:id="@+id/btnCompleteWorkout"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:text="СОХРАНИТЬ ТРЕНИРОВКУ"
+                android:textSize="14sp"
+                android:textColor="@color/button_primary_text"
+                android:backgroundTint="@color/accent_progress"
+                android:layout_marginHorizontal="8dp"
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="32dp" />
         </LinearLayout>
+    </ScrollView>
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginBottom="16dp">
-
-            <EditText
-                android:id="@+id/etWeight"
-                android:layout_width="0dp"
-                android:layout_height="48dp"
-                android:layout_weight="1"
-                android:hint="Вес, кг"
-                android:padding="12dp"
-                android:background="#F5F5F5"
-                android:inputType="numberDecimal"
-                android:textSize="16sp" />
-
-            <EditText
-                android:id="@+id/etRestTime"
-                android:layout_width="0dp"
-                android:layout_height="48dp"
-                android:layout_weight="1"
-                android:hint="Отдых, сек"
-                android:padding="12dp"
-                android:background="#F5F5F5"
-                android:inputType="number"
-                android:text="90"
-                android:textSize="16sp"
-                android:layout_marginStart="8dp"/>
-        </LinearLayout>
-
-        <!-- Добавить упражнение -->
-        <TextView
-            android:id="@+id/createWorkoutButton"
-            android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:text="Добавить упражнение"
-            android:textColor="#FFFFFF"
-            android:gravity="center"
-            android:background="#2196F3"
-            android:textSize="16sp"
-            android:layout_marginBottom="16dp"/>
-
-        <!-- Счётчик упражнений -->
-        <TextView
-            android:id="@+id/tvExercisesCount"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="0 упражнений"
-            android:textSize="14sp"
-            android:textColor="#000000"
-            android:layout_marginBottom="8dp"/>
-
-        <!-- Список упражнений -->
-        <LinearLayout
-            android:id="@+id/containerExercises"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:visibility="gone" />
-
-        <!-- Сохранить тренировку -->
-        <TextView
-            android:id="@+id/btnCompleteWorkout"
-            android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:text="Сохранить тренировку"
-            android:textColor="#FFFFFF"
-            android:gravity="center"
-            android:background="#4CAF50"
-            android:textSize="16sp"
-            android:layout_marginTop="16dp"/>
-
-    </LinearLayout>
-</ScrollView>
+</LinearLayout>
