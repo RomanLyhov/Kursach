@@ -1,0 +1,212 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background_primary"
+    android:fadeScrollbars="false"
+    android:padding="24dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center_horizontal">
+
+        <TextView
+            android:id="@+id/titleTextView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="FitPlanner"
+            android:textColor="@color/text_primary"
+            android:textSize="36sp"
+            android:textStyle="bold"
+            tools:ignore="HardcodedText" />
+
+        <TextView
+            android:id="@+id/subtitleTextView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Планировщик тренировок и питания"
+            android:textColor="@color/text_secondary"
+            android:textSize="14sp"
+            tools:ignore="HardcodedText" />
+
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:cardBackgroundColor="@color/background_secondary"
+            app:cardCornerRadius="24dp"
+            app:cardElevation="8dp"
+            app:cardUseCompatPadding="true"
+            android:layout_marginTop="48dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="32dp">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Вход в аккаунт"
+                    android:textColor="@color/text_primary"
+                    android:textSize="24sp"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="8dp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Введите данные для входа"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="14sp"
+                    android:layout_marginBottom="32dp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_marginBottom="24dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Email"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="14sp"
+                        android:layout_marginBottom="8dp" />
+
+                    <EditText
+                        android:id="@+id/loginEditText"
+                        android:layout_width="match_parent"
+                        android:layout_height="56dp"
+                        android:background="@color/background_tertiary"
+                        android:paddingHorizontal="16dp"
+                        android:gravity="center_vertical"
+                        android:textSize="16sp"
+                        android:textColor="@color/text_primary"
+                        android:hint="Введите email"
+
+                        android:inputType="textEmailAddress"
+                        android:imeOptions="actionNext"
+                        android:importantForAutofill="yes" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_marginBottom="32dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Пароль"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="14sp"
+                        android:layout_marginBottom="8dp" />
+
+                    <RelativeLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="56dp">
+
+                        <EditText
+                            android:id="@+id/passwordEditText"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:background="@color/background_tertiary"
+                            android:paddingHorizontal="16dp"
+                            android:paddingRight="48dp"
+                            android:gravity="center_vertical"
+                            android:textSize="16sp"
+                            android:textColor="@color/text_primary"
+                            android:hint="Введите пароль"
+
+                            android:inputType="textPassword"
+                            android:imeOptions="actionDone"
+                            android:importantForAutofill="yes" />
+
+                        <TextView
+                            android:id="@+id/passwordToggle"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="👁️"
+                            android:textSize="18sp"
+                            android:textColor="@color/text_secondary"
+                            android:layout_alignParentEnd="true"
+                            android:layout_centerVertical="true"
+                            android:layout_marginEnd="16dp"
+                            android:padding="8dp"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:minHeight="48dp"
+                            android:minWidth="48dp" />
+                    </RelativeLayout>
+                </LinearLayout>
+
+                <!-- Кнопка входа -->
+                <Button
+                    android:id="@+id/loginButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="64dp"
+                    android:background="@color/primary"
+                    android:text="ВОЙТИ В АККАУНТ"
+                    android:textColor="@color/button_primary_text"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:letterSpacing="0.05"
+                    android:layout_marginBottom="32dp" />
+
+                <!-- Разделитель -->
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="32dp">
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_centerVertical="true"
+                        android:background="@color/divider" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_centerInParent="true"
+                        android:background="@color/background_secondary"
+                        android:paddingHorizontal="16dp"
+                        android:text="ИЛИ"
+                        android:textColor="@color/text_hint"
+                        android:textSize="12sp" />
+                </RelativeLayout>
+
+                <!-- Кнопка регистрации -->
+                <Button
+                    android:id="@+id/registerButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="64dp"
+                    android:background="@color/background_tertiary"
+                    android:text="СОЗДАТЬ АККАУНТ"
+                    android:textColor="@color/black"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:letterSpacing="0.05" />
+
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- Футер -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="32dp"
+            android:text="© 2024 FitPlanner"
+            android:textColor="@color/text_hint"
+            android:textSize="12sp" />
+
+    </LinearLayout>
+</ScrollView>
