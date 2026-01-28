@@ -12,17 +12,19 @@ import android.widget.*
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import com.example.fitplan.App
+import com.example.fitplan.Models.Api.ApiManager
 import com.example.fitplan.Models.Product
 import com.example.fitplan.R
 import kotlinx.coroutines.*
+import java.io.IOException
+import java.net.InetSocketAddress
+import java.net.Socket
 
 class AddMealFragment : Fragment() {
 
-    // Переменные для хранения данных
     private lateinit var mealName: String
     private val db by lazy { App.instance.db }
 
-    // Элементы интерфейса
     private lateinit var productSearch: AutoCompleteTextView
     private lateinit var quantityEdit: EditText
     private lateinit var caloriesTv: TextView
@@ -32,19 +34,17 @@ class AddMealFragment : Fragment() {
     private lateinit var btnAdd: Button
     private lateinit var btnCancel: Button
 
-    // Данные и состояния
     private var selectedProduct: Product? = null
     private lateinit var adapter: ArrayAdapter<String>
     private var searchJob: Job? = null
     private var addMealJob: Job? = null
+    private val searchResultsCache = mutableMapOf<String, List<Product>>()
 
-    // Инициализация фрагмента с получением параметров
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         mealName = requireArguments().getString("mealName") ?: ""
     }
 
-    // Создание интерфейса фрагмента
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
     ): View {
@@ -68,14 +68,14 @@ class AddMealFragment : Fragment() {
         return view
     }
 
-    // Настройка всех обработчиков событий
     private fun setupListeners() {
         productSearch.addTextChangedListener(object : TextWatcher {
             override fun afterTextChanged(s: Editable?) {
+                val query = s.toString().trim()
+
+                // Отменяем предыдущий поиск
                 searchJob?.cancel()
                 searchJob = null
-
-                val query = s.toString().trim()
 
                 if (query.isEmpty()) {
                     adapter.clear()
@@ -85,43 +85,9 @@ class AddMealFragment : Fragment() {
                     return
                 }
 
+                // Запускаем мгновенный поиск без задержки
                 searchJob = viewLifecycleOwner.lifecycleScope.launch {
-                    delay(300)
-
-                    if (!isActive) return@launch
-
-                    try {
-                        val products = withContext(Dispatchers.IO) {
-                            try {
-                                db.getAllProductsMatching(query)
-                            } catch (e: Exception) {
-                                emptyList<Product>()
-                            }
-                        }
-
-                        if (!isActive) return@launch
-                        if (!isAdded) return@launch
-
-                        withContext(Dispatchers.Main) {
-                            adapter.clear()
-                            if (products.isNotEmpty()) {
-                                adapter.addAll(products.map { it.name })
-                                adapter.notifyDataSetChanged()
-                                if (!productSearch.isPopupShowing) {
-                                    productSearch.showDropDown()
-                                }
-                            } else {
-                                selectedProduct = null
-                                recalcNutrition()
-                            }
-                        }
-                    } catch (e: CancellationException) {
-                        return@launch
-                    } catch (e: Exception) {
-                        if (isAdded) {
-                            Log.d("AddMealFragment", "Search error", e)
-                        }
-                    }
+                    performInstantSearch(query)
                 }
             }
 
@@ -137,20 +103,53 @@ class AddMealFragment : Fragment() {
 
             viewLifecycleOwner.lifecycleScope.launch {
                 try {
-                    val product = withContext(Dispatchers.IO) {
-                        try {
-                            db.getProductByName(name)
-                        } catch (e: Exception) {
-                            null
-                        }
+                    // Ищем продукт в кэше
+                    val cachedResults = searchResultsCache.values.flatten()
+                    val product = cachedResults.find {
+                        it.name.equals(name, ignoreCase = true)
                     }
 
-                    if (!isAdded) return@launch
+                    if (product == null) {
+                        // Если не нашли в кэше, ищем локально
+                        val foundProduct = withContext(Dispatchers.IO) {
+                            try {
+                                db.getProductByName(name)
+                            } catch (e: Exception) {
+                                null
+                            }
+                        }
 
-                    selectedProduct = product
-                    recalcNutrition()
+                        if (isAdded && foundProduct != null) {
+                            selectedProduct = foundProduct
+                            recalcNutrition()
+                        } else if (isAdded) {
+                            Toast.makeText(
+                                requireContext(),
+                                "Не удалось загрузить данные продукта",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    } else {
+                        // Сохраняем продукт в локальную БД
+                        withContext(Dispatchers.IO) {
+                            try {
+                                db.insertOrGetProduct(product)
+                            } catch (e: Exception) {
+                                Log.e("AddMealFragment", "Error saving product", e)
+                            }
+                        }
+
+                        if (isAdded) {
+                            selectedProduct = product
+                            recalcNutrition()
+                        }
+                    }
                 } catch (e: CancellationException) {
                     return@launch
+                } catch (e: Exception) {
+                    if (isAdded) {
+                        Log.e("AddMealFragment", "Error selecting product", e)
+                    }
                 }
             }
         }
@@ -161,7 +160,6 @@ class AddMealFragment : Fragment() {
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
         })
 
-        // Обработчик кнопки добавления продукта
         btnAdd.setOnClickListener {
             if (addMealJob?.isActive == true) return@setOnClickListener
 
@@ -228,18 +226,176 @@ class AddMealFragment : Fragment() {
             }
         }
 
-        // Обработчик кнопки отмены
         btnCancel.setOnClickListener {
             searchJob?.cancel()
             addMealJob?.cancel()
-
             if (isAdded) {
                 parentFragmentManager.popBackStack()
             }
         }
     }
 
-    // Пересчет пищевой ценности на основе выбранного продукта и количества
+    // Мгновенный поиск через API без задержек
+    private suspend fun performInstantSearch(query: String) = coroutineScope {
+        if (query.length < 2) {
+            // Для коротких запросов очищаем результаты
+            withContext(Dispatchers.Main) {
+                adapter.clear()
+                adapter.notifyDataSetChanged()
+            }
+            return@coroutineScope
+        }
+
+        try {
+            // Проверяем кэш
+            val cached = searchResultsCache[query.lowercase()]
+            if (cached != null) {
+                Log.d("AddMealFragment", "Используем кэш для: $query")
+                updateResults(cached, query)
+                return@coroutineScope
+            }
+
+            // Проверяем интернет
+            val hasInternet = isOnline()
+            val products: List<Product>
+
+            if (hasInternet) {
+                Log.d("AddMealFragment", "API поиск: $query")
+
+                // Используем async для параллельного поиска в API
+                val apiJob = async {
+                    try {
+                        ApiManager.searchProducts(query)
+                    } catch (e: Exception) {
+                        Log.e("AddMealFragment", "API search error", e)
+                        emptyList<Product>()
+                    }
+                }
+
+                // Пока API ищет, показываем результаты из частичного кэша
+                showPartialResults(query)
+
+                // Ждем результаты API
+                products = apiJob.await()
+
+                // Сохраняем в кэш
+                searchResultsCache[query.lowercase()] = products
+
+            } else {
+                Log.d("AddMealFragment", "Оффлайн поиск: $query")
+                products = withContext(Dispatchers.IO) {
+                    try {
+                        // Ищем в локальной БД
+                        val method = db::class.java.getMethod("getAllProductsMatching", String::class.java)
+                        method.invoke(db, query) as List<Product>
+                    } catch (e: Exception) {
+                        emptyList<Product>()
+                    }
+                }
+            }
+
+            if (isAdded) {
+                updateResults(products, query)
+            }
+
+        } catch (e: CancellationException) {
+            Log.d("AddMealFragment", "Поиск отменен для: $query")
+        } catch (e: Exception) {
+            if (isAdded) {
+                Log.e("AddMealFragment", "Ошибка поиска для: $query", e)
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(
+                        requireContext(),
+                        "Ошибка поиска. Проверьте подключение к интернету",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+        }
+    }
+
+    // Показываем результаты из частичного кэша (первые буквы)
+    private fun showPartialResults(query: String) {
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                val queryLower = query.lowercase()
+                val partialResults = mutableListOf<Product>()
+
+                // Ищем в кэше по частичному совпадению
+                searchResultsCache.forEach { (cachedQuery, products) ->
+                    if (cachedQuery.contains(queryLower) || queryLower.contains(cachedQuery)) {
+                        // Фильтруем по текущему запросу
+                        val filtered = products.filter {
+                            it.name.lowercase().contains(queryLower)
+                        }
+                        partialResults.addAll(filtered)
+                    }
+                }
+
+                if (partialResults.isNotEmpty() && isAdded) {
+                    withContext(Dispatchers.Main) {
+                        val uniqueResults = partialResults.distinctBy { it.name }.take(10)
+                        adapter.clear()
+                        adapter.addAll(uniqueResults.map { it.name })
+                        adapter.notifyDataSetChanged()
+
+                        if (!productSearch.isPopupShowing) {
+                            productSearch.showDropDown()
+                        }
+                    }
+                }
+
+            } catch (e: Exception) {
+                Log.e("AddMealFragment", "Ошибка частичного поиска", e)
+            }
+        }
+    }
+
+    private fun updateResults(products: List<Product>, query: String) {
+        viewLifecycleOwner.lifecycleScope.launch(Dispatchers.Main) {
+            if (!isAdded) return@launch
+
+            val queryLower = query.lowercase()
+            val filtered = products.filter {
+                it.name.lowercase().contains(queryLower)
+            }.distinctBy { it.name }.take(20)
+
+            adapter.clear()
+            if (filtered.isNotEmpty()) {
+                adapter.addAll(filtered.map { it.name })
+                adapter.notifyDataSetChanged()
+
+                if (!productSearch.isPopupShowing) {
+                    productSearch.showDropDown()
+                }
+            } else if (query.length >= 3) {
+                // Только для длинных запросов показываем сообщение
+                Toast.makeText(
+                    requireContext(),
+                    "Ничего не найдено для '$query'",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+    }
+
+    private suspend fun isOnline(): Boolean {
+        return withContext(Dispatchers.IO) {
+            try {
+                val timeoutMs = 2000
+                val socket = Socket()
+                val socketAddress = InetSocketAddress("8.8.8.8", 53)
+                socket.connect(socketAddress, timeoutMs)
+                socket.close()
+                true
+            } catch (e: IOException) {
+                false
+            } catch (e: Exception) {
+                false
+            }
+        }
+    }
+
     private fun recalcNutrition() {
         val product = selectedProduct
         val quantity = quantityEdit.text.toString().toIntOrNull() ?: 100
@@ -251,17 +407,16 @@ class AddMealFragment : Fragment() {
         carbsTv.text = "${((product?.carbs ?: 0f) * factor).toInt()} г"
     }
 
-    // Очистка ресурсов при уничтожении вида
     override fun onDestroyView() {
         super.onDestroyView()
         searchJob?.cancel()
         addMealJob?.cancel()
         searchJob = null
         addMealJob = null
+        searchResultsCache.clear()
     }
 
     companion object {
-        // Создание нового экземпляра фрагмента с передачей параметров
         fun newInstance(mealName: String) =
             AddMealFragment().apply {
                 arguments = Bundle().apply {

@@ -6,12 +6,12 @@ plugins {
 
 android {
     namespace = "com.example.fitplan"
-    compileSdk = 36
+    compileSdk = 36  // ИЗМЕНИТЬ НА 34 (не 36!)
 
     defaultConfig {
         applicationId = "com.example.fitplan"
         minSdk = 24
-        targetSdk = 36
+        targetSdk = 36 // ИЗМЕНИТЬ НА 34
         versionCode = 1
         versionName = "1.0"
 
@@ -36,6 +36,7 @@ android {
     }
     buildFeatures {
         compose = true
+        viewBinding = true  // ДОБАВИТЬ ЭТУ СТРОЧКУ!
     }
 }
 
@@ -53,17 +54,11 @@ dependencies {
     testImplementation ("org.mockito:mockito-core:5.0.0")
     testImplementation ("org.mockito.kotlin:mockito-kotlin:5.0.0")
     testImplementation ("androidx.arch.core:core-testing:2.2.0")
-
-    // Инструментальные тесты
     androidTestImplementation ("androidx.test.ext:junit:1.1.5")
     androidTestImplementation ("androidx.test.espresso:espresso-core:3.5.1")
     androidTestImplementation ("androidx.test:runner:1.5.2")
     androidTestImplementation ("androidx.test:rules:1.5.0")
-
-    // Для тестирования Room и LiveData
     testImplementation ("androidx.room:room-testing:2.5.2")
-
-    // Для тестирования корутин
     testImplementation ("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.1")
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")

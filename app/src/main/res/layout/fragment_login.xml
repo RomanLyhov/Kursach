@@ -198,15 +198,5 @@
 
             </LinearLayout>
         </androidx.cardview.widget.CardView>
-
-        <!-- Футер -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="32dp"
-            android:text="© 2024 FitPlanner"
-            android:textColor="@color/text_hint"
-            android:textSize="12sp" />
-
     </LinearLayout>
 </ScrollView>

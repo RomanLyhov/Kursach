@@ -623,36 +623,114 @@ class DatabaseHelper(context: Context) :
     }
 
     suspend fun getAllProductsMatching(query: String): List<Product> = withContext(Dispatchers.IO) {
+        Log.d("DB", "Searching products for query: '$query'")
+
+        // 1. Сначала ищем в локальной БД
         val localResults = searchInLocalDatabaseFast(query)
+        Log.d("DB", "Local results: ${localResults.size} products")
+
+        // 2. Если нашли достаточно результатов, возвращаем их
         if (localResults.size >= 5) {
+            Log.d("DB", "Returning ${localResults.size} local results")
             return@withContext localResults.take(20)
         }
+
+        // 3. Если запрос достаточно длинный и локальных результатов мало, ищем в API
         if (query.length >= 2) {
             try {
+                Log.d("DB", "Querying API for: '$query'")
                 val apiProducts = ApiManager.searchProducts(query)
+                Log.d("DB", "API returned: ${apiProducts.size} products")
+
+                // 4. Фильтруем API продукты, чтобы избежать дубликатов
                 val newApiProducts = apiProducts.filter { apiProduct ->
-                    localResults.none { it.name.equals(apiProduct.name, ignoreCase = true) }
+                    localResults.none { localProduct ->
+                        localProduct.name.equals(apiProduct.name, ignoreCase = true) ||
+                                localProduct.name.contains(apiProduct.name, ignoreCase = true) ||
+                                apiProduct.name.contains(localProduct.name, ignoreCase = true)
+                    }
                 }
 
-                saveProductsToDatabase(newApiProducts)
+                Log.d("DB", "New unique API products: ${newApiProducts.size}")
+
+                // 5. Сохраняем новые продукты в БД
+                if (newApiProducts.isNotEmpty()) {
+                    saveProductsToDatabase(newApiProducts)
+                    Log.d("DB", "Saved ${newApiProducts.size} new products to database")
+                }
+
+                // 6. Объединяем результаты
+                val combinedResults = localResults + newApiProducts
+                Log.d("DB", "Total combined results: ${combinedResults.size} products")
+
+                return@withContext combinedResults.take(20)
+
             } catch (e: Exception) {
                 Log.e("DB", "API search error: ${e.message}")
+                // Возвращаем только локальные результаты в случае ошибки
+                return@withContext localResults.take(20)
             }
         }
 
-        localResults.take(20)
+        // Если запрос слишком короткий, возвращаем только локальные результаты
+        return@withContext localResults.take(20)
     }
 
     private fun searchInLocalDatabaseFast(query: String): List<Product> {
-        return queryMultiple(
-            table = TABLE_PRODUCTS,
-            selection = "$COL_NAME LIKE ? || '%' COLLATE NOCASE",
-            selectionArgs = arrayOf(query),
-            orderBy = "$COL_NAME ASC",
-            limit = "15"
-        ).map { it.toProduct() }
+        return readableDatabase.rawQuery("""
+        SELECT * FROM $TABLE_PRODUCTS 
+        WHERE $COL_NAME LIKE ? || '%' COLLATE NOCASE
+        OR $COL_NAME LIKE '%' || ? || '%' COLLATE NOCASE
+        ORDER BY $COL_NAME ASC
+        LIMIT 15
+    """, arrayOf(query, query)).use { cursor ->
+            val products = mutableListOf<Product>()
+            while (cursor.moveToNext()) {
+                products.add(
+                    Product(
+                        id = cursor.getLong(cursor.getColumnIndexOrThrow(COL_ID)),
+                        name = cursor.getString(cursor.getColumnIndexOrThrow(COL_NAME)),
+                        calories = cursor.getFloat(cursor.getColumnIndexOrThrow("calories")),
+                        protein = cursor.getFloat(cursor.getColumnIndexOrThrow("protein")),
+                        fat = cursor.getFloat(cursor.getColumnIndexOrThrow("fat")),
+                        carbs = cursor.getFloat(cursor.getColumnIndexOrThrow("carbs"))
+                    )
+                )
+            }
+            products
+        }
     }
+// В класс DatabaseHelper добавьте:
 
+    fun deleteWorkout(workoutId: Long): Boolean {
+        return writableDatabase.use { db ->
+            try {
+                db.beginTransaction()
+
+                // 1. Удаляем упражнения тренировки
+                db.delete(
+                    TABLE_WORKOUT_EXERCISES,
+                    "workout_id = ?",
+                    arrayOf(workoutId.toString())
+                )
+
+                // 2. Удаляем саму тренировку
+                val rowsDeleted = db.delete(
+                    TABLE_WORKOUTS,
+                    "$COL_ID = ?",
+                    arrayOf(workoutId.toString())
+                )
+
+                db.setTransactionSuccessful()
+                rowsDeleted > 0
+            } catch (e: Exception) {
+                Log.e("DB", "Error deleting workout", e)
+                false
+            } finally {
+                db.endTransaction()
+            }
+        }
+    }
     private fun saveProductsToDatabase(products: List<Product>) {
         products.forEach { product ->
             try {

@@ -1,6 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/cardRoot"
     android:layout_width="match_parent"
@@ -12,16 +10,23 @@
     android:padding="20dp"
     android:elevation="4dp">
 
-    <TextView
-        android:id="@+id/tvWorkoutName"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Название тренировки"
-        android:textSize="20sp"
-        android:textStyle="bold"
-        android:textColor="@color/text_primary"
-        android:layout_marginBottom="12dp"
-        tools:text="Силовая тренировка груди" />
+        android:orientation="horizontal"
+        android:layout_marginBottom="12dp">
+
+        <TextView
+            android:id="@+id/tvWorkoutName"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Название тренировки"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:textColor="@color/text_primary"
+            tools:text="Силовая тренировка груди" />
+    </LinearLayout>
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -56,7 +61,6 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="📅"
                 android:textSize="14sp"
                 android:layout_marginEnd="6dp"
                 android:visibility="gone" />
@@ -69,7 +73,7 @@
                 android:textSize="14sp"
                 android:textColor="@color/text_secondary"
                 android:visibility="gone"
-                tools:text="15 дек 2024"
+                tools:text="27 янв 2026"
                 tools:visibility="visible" />
         </LinearLayout>
     </LinearLayout>
@@ -86,9 +90,9 @@
             android:layout_width="0dp"
             android:layout_height="48dp"
             android:layout_weight="1"
-            android:layout_marginEnd="8dp"
+            android:layout_marginEnd="6dp"
             android:text="Начать"
-            android:textSize="14sp"
+            android:textSize="11sp"
             android:textStyle="bold"
             android:textColor="@color/button_primary_text"
             android:backgroundTint="@color/accent_progress" />
@@ -98,11 +102,23 @@
             android:layout_width="0dp"
             android:layout_height="48dp"
             android:layout_weight="1"
-            android:layout_marginStart="8dp"
+            android:layout_marginStart="2dp"
+            android:layout_marginEnd="2dp"
             android:text="Изменить"
-            android:textSize="14sp"
+            android:textSize="11sp"
             android:textStyle="bold"
             android:textColor="@color/text_primary"
+            android:backgroundTint="@color/background_tertiary" />
+        <Button
+            android:id="@+id/btnDelete"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1"
+            android:layout_marginStart="4dp"
+            android:text="Удалить"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            android:textColor="@color/error"
             android:backgroundTint="@color/background_tertiary" />
     </LinearLayout>
 
