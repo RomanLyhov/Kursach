@@ -16,9 +16,6 @@ import com.example.fitplan.Models.Api.ApiManager
 import com.example.fitplan.Models.Product
 import com.example.fitplan.R
 import kotlinx.coroutines.*
-import java.io.IOException
-import java.net.InetSocketAddress
-import java.net.Socket
 
 class AddMealFragment : Fragment() {
 
@@ -33,12 +30,13 @@ class AddMealFragment : Fragment() {
     private lateinit var carbsTv: TextView
     private lateinit var btnAdd: Button
     private lateinit var btnCancel: Button
+    private lateinit var searchProgress: ProgressBar
 
     private var selectedProduct: Product? = null
     private lateinit var adapter: ArrayAdapter<String>
     private var searchJob: Job? = null
-    private var addMealJob: Job? = null
-    private val searchResultsCache = mutableMapOf<String, List<Product>>()
+    private var lastQuery: String = ""
+    private var searchAttempts = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -58,6 +56,7 @@ class AddMealFragment : Fragment() {
         carbsTv = view.findViewById(R.id.carbsValue)
         btnAdd = view.findViewById(R.id.btnAddMeal)
         btnCancel = view.findViewById(R.id.btnCancel)
+        searchProgress = view.findViewById(R.id.searchProgress)
 
         adapter = ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, mutableListOf())
         productSearch.setAdapter(adapter)
@@ -70,25 +69,40 @@ class AddMealFragment : Fragment() {
 
     private fun setupListeners() {
         productSearch.addTextChangedListener(object : TextWatcher {
+            private val handler = android.os.Handler()
+            private val runnable = Runnable {
+                val currentQuery = productSearch.text.toString().trim()
+                if (currentQuery.isNotEmpty() && currentQuery.length >= 2) {
+                    startSearch(currentQuery)
+                }
+            }
+
             override fun afterTextChanged(s: Editable?) {
                 val query = s.toString().trim()
+                lastQuery = query
 
-                // Отменяем предыдущий поиск
+                // Отменяем предыдущий отложенный поиск
+                handler.removeCallbacks(runnable)
                 searchJob?.cancel()
-                searchJob = null
 
                 if (query.isEmpty()) {
                     adapter.clear()
                     adapter.notifyDataSetChanged()
                     selectedProduct = null
                     recalcNutrition()
+                    searchProgress.visibility = View.GONE
                     return
                 }
 
-                // Запускаем мгновенный поиск без задержки
-                searchJob = viewLifecycleOwner.lifecycleScope.launch {
-                    performInstantSearch(query)
-                }
+                // Сразу показываем кэшированные результаты
+                showCachedResults(query)
+
+                // Если запрос короткий, не ищем в API
+                if (query.length < 3) return
+
+                // Запускаем новый поиск через 500мс (дебаунс)
+                searchProgress.visibility = View.VISIBLE
+                handler.postDelayed(runnable, 500)
             }
 
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
@@ -99,57 +113,36 @@ class AddMealFragment : Fragment() {
             val name = adapter.getItem(position) ?: return@setOnItemClickListener
 
             searchJob?.cancel()
-            searchJob = null
+            searchProgress.visibility = View.GONE
 
             viewLifecycleOwner.lifecycleScope.launch {
                 try {
-                    // Ищем продукт в кэше
-                    val cachedResults = searchResultsCache.values.flatten()
-                    val product = cachedResults.find {
-                        it.name.equals(name, ignoreCase = true)
+                    // Сначала ищем в кэше API
+                    selectedProduct = ApiManager.getCachedProductByName(name)
+
+                    // Если не нашли, ищем в локальной БД
+                    if (selectedProduct == null) {
+                        selectedProduct = withContext(Dispatchers.IO) {
+                            db.getProductByName(name)
+                        }
                     }
 
-                    if (product == null) {
-                        // Если не нашли в кэше, ищем локально
-                        val foundProduct = withContext(Dispatchers.IO) {
-                            try {
-                                db.getProductByName(name)
-                            } catch (e: Exception) {
-                                null
-                            }
-                        }
-
-                        if (isAdded && foundProduct != null) {
-                            selectedProduct = foundProduct
-                            recalcNutrition()
-                        } else if (isAdded) {
-                            Toast.makeText(
-                                requireContext(),
-                                "Не удалось загрузить данные продукта",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        }
-                    } else {
-                        // Сохраняем продукт в локальную БД
-                        withContext(Dispatchers.IO) {
-                            try {
-                                db.insertOrGetProduct(product)
-                            } catch (e: Exception) {
-                                Log.e("AddMealFragment", "Error saving product", e)
-                            }
-                        }
-
-                        if (isAdded) {
-                            selectedProduct = product
-                            recalcNutrition()
-                        }
+                    // Если все еще не нашли, создаем пустой продукт
+                    if (selectedProduct == null) {
+                        selectedProduct = Product(
+                            id = 0,
+                            name = name,
+                            calories = 0f,
+                            protein = 0f,
+                            fat = 0f,
+                            carbs = 0f
+                        )
                     }
-                } catch (e: CancellationException) {
-                    return@launch
+
+                    recalcNutrition()
+
                 } catch (e: Exception) {
-                    if (isAdded) {
-                        Log.e("AddMealFragment", "Error selecting product", e)
-                    }
+                    Log.e("AddMealFragment", "Ошибка выбора", e)
                 }
             }
         }
@@ -161,237 +154,202 @@ class AddMealFragment : Fragment() {
         })
 
         btnAdd.setOnClickListener {
-            if (addMealJob?.isActive == true) return@setOnClickListener
-
-            btnAdd.isEnabled = false
-            val product = selectedProduct
-            if (product == null) {
-                Toast.makeText(requireContext(), "Выберите продукт", Toast.LENGTH_SHORT).show()
-                btnAdd.isEnabled = true
-                return@setOnClickListener
-            }
-
-            val quantity = quantityEdit.text.toString().toIntOrNull() ?: 100
-            if (quantity <= 0) {
-                Toast.makeText(requireContext(), "Введите корректное количество", Toast.LENGTH_SHORT).show()
-                btnAdd.isEnabled = true
-                return@setOnClickListener
-            }
-
-            addMealJob = viewLifecycleOwner.lifecycleScope.launch {
-                try {
-                    val success = withContext(Dispatchers.IO) {
-                        try {
-                            val prefs = requireContext().getSharedPreferences("session", Context.MODE_PRIVATE)
-                            val userId = prefs.getLong("user_id", -1L)
-                            if (userId == -1L) return@withContext false
-
-                            val factor = quantity / 100f
-                            val productId = db.insertOrGetProduct(product)
-
-                            db.addMeal(
-                                userId, productId, mealName, quantity,
-                                product.calories * factor,
-                                product.protein * factor,
-                                product.fat * factor,
-                                product.carbs * factor
-                            )
-                            true
-                        } catch (e: Exception) {
-                            Log.e("AddMealFragment", "Database error", e)
-                            false
-                        }
-                    }
-
-                    if (isAdded) {
-                        if (success) {
-                            parentFragmentManager.setFragmentResult("meal_added", Bundle.EMPTY)
-                            parentFragmentManager.popBackStack()
-                        } else {
-                            Toast.makeText(requireContext(), "Ошибка при добавлении продукта", Toast.LENGTH_SHORT).show()
-                            btnAdd.isEnabled = true
-                        }
-                    }
-                } catch (e: CancellationException) {
-                    if (isAdded) {
-                        btnAdd.isEnabled = true
-                    }
-                } catch (e: Exception) {
-                    Log.e("AddMealFragment", "Add meal error", e)
-                    if (isAdded) {
-                        Toast.makeText(requireContext(), "Ошибка: ${e.message}", Toast.LENGTH_SHORT).show()
-                        btnAdd.isEnabled = true
-                    }
-                }
-            }
+            addProductToMeal()
         }
 
         btnCancel.setOnClickListener {
             searchJob?.cancel()
-            addMealJob?.cancel()
-            if (isAdded) {
-                parentFragmentManager.popBackStack()
+            parentFragmentManager.popBackStack()
+        }
+    }
+
+    private fun showCachedResults(query: String) {
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                // Ищем локальные результаты из БД
+                val localResults = withContext(Dispatchers.IO) {
+                    db.getAllProductsMatching(query)
+                }.take(10)
+
+                if (localResults.isNotEmpty()) {
+                    updateAdapterUI(localResults)
+                }
+
+                // Дополняем кэшированными результатами из API
+                val cachedApiResults = ApiManager.getCachedResults(query)
+                if (cachedApiResults.isNotEmpty()) {
+                    val combined = (localResults + cachedApiResults)
+                        .distinctBy { it.name }
+                        .take(15)
+                    updateAdapterUI(combined)
+                }
+
+            } catch (e: Exception) {
+                // Игнорируем ошибки
             }
         }
     }
 
-    // Мгновенный поиск через API без задержек
-    private suspend fun performInstantSearch(query: String) = coroutineScope {
-        if (query.length < 2) {
-            // Для коротких запросов очищаем результаты
-            withContext(Dispatchers.Main) {
-                adapter.clear()
-                adapter.notifyDataSetChanged()
+    private fun startSearch(query: String) {
+        searchJob?.cancel()
+
+        searchJob = viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                searchAttempts++
+                Log.d("AddMealFragment", "Поиск #$searchAttempts: '$query'")
+
+                // Параллельно ищем в API и локальной БД
+                val apiJob = async(Dispatchers.IO) {
+                    ApiManager.searchProducts(query)
+                }
+
+                val localJob = async(Dispatchers.IO) {
+                    db.getAllProductsMatching(query)
+                }
+
+                // Ждем оба результата с таймаутом
+                val results = withTimeoutOrNull(3000) {
+                    val apiResults = apiJob.await()
+                    val localResults = localJob.await()
+
+                    // Объединяем результаты
+                    val combined = (localResults + apiResults)
+                        .distinctBy { it.name }
+                        .take(20)
+
+                    combined
+                }
+
+                // Проверяем что запрос все еще актуален
+                if (query == lastQuery) {
+                    withContext(Dispatchers.Main) {
+                        searchProgress.visibility = View.GONE
+
+                        results?.let {
+                            if (it.isNotEmpty()) {
+                                updateAdapterUI(it)
+
+                                // Сохраняем API результаты в БД
+                                launch(Dispatchers.IO) {
+                                    it.forEach { product ->
+                                        try {
+                                            db.insertOrGetProduct(product)
+                                        } catch (e: Exception) {
+                                            // Игнорируем ошибки сохранения
+                                        }
+                                    }
+                                }
+                            } else if (query.length >= 3) {
+                                Toast.makeText(
+                                    requireContext(),
+                                    "Ничего не найдено",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                        }
+                    }
+                }
+
+            } catch (e: CancellationException) {
+                // Поиск отменен
+            } catch (e: TimeoutCancellationException) {
+                Log.d("AddMealFragment", "Таймаут поиска")
+                withContext(Dispatchers.Main) {
+                    searchProgress.visibility = View.GONE
+                    if (query == lastQuery && adapter.count == 0) {
+                        Toast.makeText(
+                            requireContext(),
+                            "Поиск занял слишком много времени",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("AddMealFragment", "Ошибка поиска", e)
+                withContext(Dispatchers.Main) {
+                    searchProgress.visibility = View.GONE
+                }
             }
-            return@coroutineScope
+        }
+    }
+
+    private fun updateAdapterUI(products: List<Product>) {
+        if (!isAdded || products.isEmpty()) return
+
+        // Ограничиваем количество
+        val limitedProducts = products.take(15)
+
+        // Сортируем по релевантности
+        val query = productSearch.text.toString().lowercase()
+        val sortedProducts = limitedProducts.sortedBy { product ->
+            val name = product.name.lowercase()
+            when {
+                name == query -> 0
+                name.startsWith(query) -> 1
+                name.contains(query) -> 2
+                else -> 3
+            }
         }
 
-        try {
-            // Проверяем кэш
-            val cached = searchResultsCache[query.lowercase()]
-            if (cached != null) {
-                Log.d("AddMealFragment", "Используем кэш для: $query")
-                updateResults(cached, query)
-                return@coroutineScope
-            }
+        adapter.clear()
+        adapter.addAll(sortedProducts.map { it.name })
+        adapter.notifyDataSetChanged()
 
-            // Проверяем интернет
-            val hasInternet = isOnline()
-            val products: List<Product>
+        if (!productSearch.isPopupShowing && adapter.count > 0) {
+            productSearch.showDropDown()
+        }
+    }
 
-            if (hasInternet) {
-                Log.d("AddMealFragment", "API поиск: $query")
+    private fun addProductToMeal() {
+        val product = selectedProduct
+        if (product == null) {
+            Toast.makeText(requireContext(), "Выберите продукт", Toast.LENGTH_SHORT).show()
+            return
+        }
 
-                // Используем async для параллельного поиска в API
-                val apiJob = async {
+        val quantity = quantityEdit.text.toString().toIntOrNull() ?: 100
+        if (quantity <= 0) {
+            Toast.makeText(requireContext(), "Введите корректное количество", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                val success = withContext(Dispatchers.IO) {
                     try {
-                        ApiManager.searchProducts(query)
+                        val prefs = requireContext().getSharedPreferences("session", Context.MODE_PRIVATE)
+                        val userId = prefs.getLong("user_id", -1L)
+                        if (userId == -1L) return@withContext false
+
+                        val factor = quantity / 100f
+                        val productId = db.insertOrGetProduct(product)
+
+                        db.addMeal(
+                            userId, productId, mealName, quantity,
+                            product.calories * factor,
+                            product.protein * factor,
+                            product.fat * factor,
+                            product.carbs * factor
+                        )
+                        true
                     } catch (e: Exception) {
-                        Log.e("AddMealFragment", "API search error", e)
-                        emptyList<Product>()
+                        Log.e("AddMealFragment", "Ошибка БД", e)
+                        false
                     }
                 }
 
-                // Пока API ищет, показываем результаты из частичного кэша
-                showPartialResults(query)
-
-                // Ждем результаты API
-                products = apiJob.await()
-
-                // Сохраняем в кэш
-                searchResultsCache[query.lowercase()] = products
-
-            } else {
-                Log.d("AddMealFragment", "Оффлайн поиск: $query")
-                products = withContext(Dispatchers.IO) {
-                    try {
-                        // Ищем в локальной БД
-                        val method = db::class.java.getMethod("getAllProductsMatching", String::class.java)
-                        method.invoke(db, query) as List<Product>
-                    } catch (e: Exception) {
-                        emptyList<Product>()
-                    }
-                }
-            }
-
-            if (isAdded) {
-                updateResults(products, query)
-            }
-
-        } catch (e: CancellationException) {
-            Log.d("AddMealFragment", "Поиск отменен для: $query")
-        } catch (e: Exception) {
-            if (isAdded) {
-                Log.e("AddMealFragment", "Ошибка поиска для: $query", e)
-                withContext(Dispatchers.Main) {
+                if (success) {
+                    parentFragmentManager.setFragmentResult("meal_added", Bundle.EMPTY)
+                    parentFragmentManager.popBackStack()
+                } else {
                     Toast.makeText(
                         requireContext(),
-                        "Ошибка поиска. Проверьте подключение к интернету",
+                        "Ошибка при добавлении",
                         Toast.LENGTH_SHORT
                     ).show()
                 }
-            }
-        }
-    }
-
-    // Показываем результаты из частичного кэша (первые буквы)
-    private fun showPartialResults(query: String) {
-        viewLifecycleOwner.lifecycleScope.launch {
-            try {
-                val queryLower = query.lowercase()
-                val partialResults = mutableListOf<Product>()
-
-                // Ищем в кэше по частичному совпадению
-                searchResultsCache.forEach { (cachedQuery, products) ->
-                    if (cachedQuery.contains(queryLower) || queryLower.contains(cachedQuery)) {
-                        // Фильтруем по текущему запросу
-                        val filtered = products.filter {
-                            it.name.lowercase().contains(queryLower)
-                        }
-                        partialResults.addAll(filtered)
-                    }
-                }
-
-                if (partialResults.isNotEmpty() && isAdded) {
-                    withContext(Dispatchers.Main) {
-                        val uniqueResults = partialResults.distinctBy { it.name }.take(10)
-                        adapter.clear()
-                        adapter.addAll(uniqueResults.map { it.name })
-                        adapter.notifyDataSetChanged()
-
-                        if (!productSearch.isPopupShowing) {
-                            productSearch.showDropDown()
-                        }
-                    }
-                }
-
             } catch (e: Exception) {
-                Log.e("AddMealFragment", "Ошибка частичного поиска", e)
-            }
-        }
-    }
-
-    private fun updateResults(products: List<Product>, query: String) {
-        viewLifecycleOwner.lifecycleScope.launch(Dispatchers.Main) {
-            if (!isAdded) return@launch
-
-            val queryLower = query.lowercase()
-            val filtered = products.filter {
-                it.name.lowercase().contains(queryLower)
-            }.distinctBy { it.name }.take(20)
-
-            adapter.clear()
-            if (filtered.isNotEmpty()) {
-                adapter.addAll(filtered.map { it.name })
-                adapter.notifyDataSetChanged()
-
-                if (!productSearch.isPopupShowing) {
-                    productSearch.showDropDown()
-                }
-            } else if (query.length >= 3) {
-                // Только для длинных запросов показываем сообщение
-                Toast.makeText(
-                    requireContext(),
-                    "Ничего не найдено для '$query'",
-                    Toast.LENGTH_SHORT
-                ).show()
-            }
-        }
-    }
-
-    private suspend fun isOnline(): Boolean {
-        return withContext(Dispatchers.IO) {
-            try {
-                val timeoutMs = 2000
-                val socket = Socket()
-                val socketAddress = InetSocketAddress("8.8.8.8", 53)
-                socket.connect(socketAddress, timeoutMs)
-                socket.close()
-                true
-            } catch (e: IOException) {
-                false
-            } catch (e: Exception) {
-                false
+                Toast.makeText(requireContext(), "Ошибка: ${e.message}", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -401,19 +359,21 @@ class AddMealFragment : Fragment() {
         val quantity = quantityEdit.text.toString().toIntOrNull() ?: 100
         val factor = if (quantity > 0) quantity / 100f else 0f
 
-        caloriesTv.text = ((product?.calories ?: 0f) * factor).toInt().toString()
-        proteinTv.text = "${((product?.protein ?: 0f) * factor).toInt()} г"
-        fatTv.text = "${((product?.fat ?: 0f) * factor).toInt()} г"
-        carbsTv.text = "${((product?.carbs ?: 0f) * factor).toInt()} г"
+        val calories = ((product?.calories ?: 0f) * factor).toInt()
+        val protein = ((product?.protein ?: 0f) * factor).toInt()
+        val fat = ((product?.fat ?: 0f) * factor).toInt()
+        val carbs = ((product?.carbs ?: 0f) * factor).toInt()
+
+        caloriesTv.text = calories.toString()
+        proteinTv.text = "$protein г"
+        fatTv.text = "$fat г"
+        carbsTv.text = "$carbs г"
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
         searchJob?.cancel()
-        addMealJob?.cancel()
         searchJob = null
-        addMealJob = null
-        searchResultsCache.clear()
     }
 
     companion object {

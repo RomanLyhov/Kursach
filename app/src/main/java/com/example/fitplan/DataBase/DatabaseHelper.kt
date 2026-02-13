@@ -1070,4 +1070,5 @@ private fun Product.toContentValues(): ContentValues {
         put("fat", fat)
         put("carbs", carbs)
     }
+
 }

@@ -208,39 +208,70 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
-                    android:layout_marginBottom="16dp">
+                    android:layout_marginBottom="12dp">
 
-                    <EditText
-                        android:id="@+id/etWeight"
+                    <LinearLayout
                         android:layout_width="0dp"
-                        android:layout_height="48dp"
+                        android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:hint="Вес (кг)"
-                        android:text="0"
-                        android:textSize="14sp"
-                        android:textColor="@color/text_primary"
-                        android:paddingHorizontal="12dp"
-                        android:gravity="center_vertical"
-                        android:inputType="numberDecimal"
-                        android:imeOptions="actionNext"
-                        android:background="@color/background_tertiary"
-                        android:layout_marginEnd="4dp" />
+                        android:orientation="vertical"
+                        android:layout_marginEnd="4dp">
 
-                    <EditText
-                        android:id="@+id/etRestTime"
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="РАБОЧИЙ ВЕС"
+                            android:textSize="10sp"
+                            android:textColor="@color/text_hint"
+                            android:textAllCaps="true"
+                            android:layout_marginBottom="4dp" />
+
+                        <EditText
+                            android:id="@+id/etWeight"
+                            android:layout_width="match_parent"
+                            android:layout_height="48dp"
+                            android:hint="Вес (кг)"
+                            android:text="0"
+                            android:textSize="14sp"
+                            android:textColor="@color/text_primary"
+                            android:paddingHorizontal="12dp"
+                            android:gravity="center_vertical"
+                            android:inputType="numberDecimal"
+                            android:imeOptions="actionNext"
+                            android:background="@color/background_tertiary" />
+                    </LinearLayout>
+
+                    <LinearLayout
                         android:layout_width="0dp"
-                        android:layout_height="48dp"
+                        android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:hint="Отдых (сек)"
-                        android:text="90"
-                        android:textSize="14sp"
-                        android:textColor="@color/text_primary"
-                        android:paddingHorizontal="12dp"
-                        android:gravity="center_vertical"
-                        android:inputType="number"
-                        android:imeOptions="actionDone"
-                        android:background="@color/background_tertiary"
-                        android:layout_marginStart="4dp" />
+                        android:orientation="vertical"
+                        android:layout_marginStart="4dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="ОТДЫХ (СЕК)"
+                            android:textSize="10sp"
+                            android:textColor="@color/text_hint"
+                            android:textAllCaps="true"
+                            android:layout_marginBottom="4dp" />
+
+                        <!-- ВНИМАНИЕ: ID ОСТАВЛЕН КАК etRestTime, КАК В КОДЕ! -->
+                        <EditText
+                            android:id="@+id/etRestTime"
+                            android:layout_width="match_parent"
+                            android:layout_height="48dp"
+                            android:hint="90"
+                            android:text="90"
+                            android:textSize="14sp"
+                            android:textColor="@color/text_primary"
+                            android:paddingHorizontal="12dp"
+                            android:gravity="center_vertical"
+                            android:inputType="number"
+                            android:imeOptions="actionDone"
+                            android:background="@color/background_tertiary" />
+                    </LinearLayout>
                 </LinearLayout>
 
                 <Button
@@ -283,5 +314,4 @@
                 android:layout_marginBottom="32dp" />
         </LinearLayout>
     </ScrollView>
-
 </LinearLayout>
